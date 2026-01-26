@@ -1,0 +1,44 @@
+name: rlvr
+channels:
+  - main
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  # - conda-forge::gxx_linux-64=11
+  # - conda-forge::gcc_linux-64=11
+  - python=3.13
+  - uv=0.9.26
+  - main::cuda-compiler==12.8.1
+  - main::cuda-libraries==12.8.1
+  - main::cuda-libraries-dev==12.8.1
+  - main::cuda-tools==12.8.1
+  - main::cuda-runtime==12.8.1
+  - main::cuda-toolkit==12.8.1
+  - main::cuda-nvcc==12.8.93
+  - main::cuda-cudart==12.8.90
+  - main::cuda-cudart-dev==12.8.90
+  - main::cuda-cupti==12.8.90
+  - main::cuda-cccl==12.8.90
+  - main::cuda-nvtx==12.8.90
+  - main::cuda-cuobjdump==12.8.90
+  - main::cuda-cuxxfilt==12.8.90
+  - main::cuda-driver-dev==12.8.90
+  - main::cuda-gdb==12.8.90
+  - main::cuda-nsight==12.8.90
+  - main::cuda-nvdisasm==12.8.90
+  - main::cuda-nvml-dev==12.8.90
+  - main::cuda-nvprune==12.8.90
+  - main::cuda-nvrtc==12.8.93
+  - main::cuda-nvrtc-dev==12.8.93
+  - main::cuda-nvtx==12.8.90
+  - main::cuda-nvtx-dev==12.8.90
+  - main::cuda-opencl==12.8.90
+  - main::cuda-opencl-dev==12.8.90
+  - main::cuda-profiler-api==12.8.90
+  - main::cuda-sanitizer-api==12.8.93
+  - main::cuda-visual-tools==12.8.1
+  - main::libcublas==12.8.4.1
+  - main::libcublas-dev==12.8.4.1
+  - main::nccl==2.28.9.1
+  - main::cudnn==9.17.0.29
