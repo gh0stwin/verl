@@ -334,8 +334,10 @@ def masked_whiten(values, mask, shift_mean=True):
     """
     mean, var = masked_mean(values, mask), masked_var(values, mask)
     whitened = (values - mean) * torch.rsqrt(var + 1e-8)
+
     if not shift_mean:
         whitened += mean
+
     return whitened
 
 

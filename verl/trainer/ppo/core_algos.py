@@ -98,6 +98,8 @@ class AdvantageEstimator(str, Enum):
     GRPO = "grpo"
     REINFORCE_PLUS_PLUS = "reinforce_plus_plus"
     REINFORCE_PLUS_PLUS_BASELINE = "reinforce_plus_plus_baseline"
+    REINFORCE_PLUS_PLUS_BASELINE_STATEFUL = "reinforce_plus_plus_baseline_stateful"
+    REINFORCE_PLUS_PLUS_BASELINE_PROMPT_STATEFUL = "reinforce_plus_plus_baseline_prompt_stateful"
     REMAX = "remax"
     RLOO = "rloo"
     OPO = "opo"
@@ -447,14 +449,15 @@ def compute_reinforce_plus_plus_baseline_outcome_advantage(
     """
     response_length = token_level_rewards.shape[-1]
     scores = token_level_rewards.sum(dim=-1)
-
     id2score = defaultdict(list)
     id2mean = {}
 
     with torch.no_grad():
         bsz = scores.shape[0]
+
         for i in range(bsz):
             id2score[index[i]].append(scores[i])
+
         for idx in id2score:
             if len(id2score[idx]) == 1:
                 id2mean[idx] = torch.tensor(0.0)
@@ -462,6 +465,7 @@ def compute_reinforce_plus_plus_baseline_outcome_advantage(
                 id2mean[idx] = torch.mean(torch.stack(id2score[idx]))
             else:
                 raise ValueError(f"no score in prompt index: {idx}")
+
         for i in range(bsz):
             scores[i] = scores[i] - id2mean[index[i]]
 
@@ -469,6 +473,72 @@ def compute_reinforce_plus_plus_baseline_outcome_advantage(
         scores = verl_F.masked_whiten(scores, response_mask) * response_mask
 
     return scores, scores
+
+
+@register_adv_est(
+    AdvantageEstimator.REINFORCE_PLUS_PLUS_BASELINE_STATEFUL
+)  # or simply: @register_adv_est("reinforce_plus_plus_baseline_stateful")
+def compute_reinforce_plus_plus_baseline_stateful_outcome_advantage(
+    token_level_rewards: torch.Tensor,
+    response_mask: torch.Tensor,
+    index: torch.Tensor,
+    epsilon: float = 1e-6,
+    config: Optional[AlgoConfig] = None,
+    **kwargs,
+) -> tuple[torch.Tensor, torch.Tensor, dict[str, torch.Tensor]]:
+    """
+    Args:
+        token_level_rewards: `(torch.Tensor)`
+            shape: (bs, response_length)
+        response_mask: `(torch.Tensor)`
+            shape: (bs, response_length)
+        config: (AlgoConfig) algorithm config
+
+    Returns:
+        advantages: `(torch.Tensor)`
+            shape: (bs, response_length)
+        returns: `(torch.Tensor)`
+            shape: (bs, response_length)
+        info: `dict[str, torch.Tensor]`
+            shape: ()
+    """
+    mean_state = kwargs["mean_moment"]
+    var_state = kwargs["var_moment"]
+    time_state = kwargs["time_state"]
+    mean_decay = kwargs["mean_decay"]
+    var_decay = kwargs["var_decay"]
+    response_length = token_level_rewards.shape[-1]
+    scores = token_level_rewards.sum(dim=-1)
+    id2score = defaultdict(list)
+    id2mean = {}
+
+    with torch.no_grad():
+        bsz = scores.shape[0]
+
+        for i in range(bsz):
+            id2score[index[i]].append(scores[i])
+
+        for idx in id2score:
+            if len(id2score[idx]) == 1:
+                id2mean[idx] = torch.tensor(0.0)
+            elif len(id2score[idx]) > 1:
+                id2mean[idx] = torch.mean(torch.stack(id2score[idx]))
+            else:
+                raise ValueError(f"no score in prompt index: {idx}")
+
+        for i in range(bsz):
+            scores[i] = scores[i] - id2mean[index[i]]
+
+        scores = verl_F.masked_whiten(scores, torch.ones_like(scores))  # (bs,)
+        mean_moment = mean_decay * mean_state + (1 - mean_decay) * scores
+        var_moment = var_decay * var_state + (1 - var_decay) * scores**2
+        corr_mean_moment = mean_moment / (1 - mean_decay**time_state)
+        corr_var_moment = var_moment / (1 - var_decay**time_state)
+        scores = corr_mean_moment / (torch.sqrt(corr_var_moment) + epsilon)
+        scores = scores.unsqueeze(-1).tile([1, response_length]) * response_mask
+        # scores = verl_F.masked_whiten(scores, response_mask) * response_mask
+
+    return scores, scores, {"mean_moment": mean_moment, "var_moment": var_moment, "time_state": time_state + 1}
 
 
 @register_adv_est(AdvantageEstimator.RLOO)  # or simply: @register_adv_est("rloo")

@@ -45,6 +45,10 @@ def default_compute_score(
         from . import gsm8k
 
         res = gsm8k.compute_score(solution_str, ground_truth)
+    elif data_source == "deepscaler":
+        from . import deepscaler
+
+        res = deepscaler.deepscaler_reward_fn(solution_str, ground_truth)
     elif data_source in ["lighteval/MATH", "DigitalLearningGmbH/MATH-lighteval", "HuggingFaceH4/MATH-500"]:
         from . import math_reward
 
