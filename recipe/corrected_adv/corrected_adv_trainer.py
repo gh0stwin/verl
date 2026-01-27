@@ -48,10 +48,10 @@ def compute_advantage(
     adv_estimator: AdvantageEstimator,
     gamma: float = 1.0,
     lam: float = 1.0,
-    state:dict[str, torch.Tensor],
     num_repeat: int = 1,
     norm_adv_by_std_in_grpo: bool = True,
     config: AlgoConfig | None = None,
+    state: dict[str, torch.Tensor] | None = None,
 ) -> DataProto:
     """Compute advantage estimates for policy optimization.
 
@@ -105,7 +105,7 @@ def compute_advantage(
         )
         data.batch["advantages"] = advantages
         data.batch["returns"] = returns
-    elif adv_estimator==AdvantageEstimator.REINFORCE_PLUS_PLUS_BASELINE_PROMPT_STATEFUL:
+    elif adv_estimator == AdvantageEstimator.REINFORCE_PLUS_PLUS_BASELINE_PROMPT_STATEFUL:
         data.non_tensor_batch["prompt_id"]
     else:
         # handle all other adv estimator type other than GAE and GRPO
