@@ -58,9 +58,7 @@ gen_tp=1
 
 export VLLM_USE_V1=1
 
-ray job submit --no-wait --runtime-env="${RUNTIME_ENV}" \
-  --working-dir "${WORKING_DIR}" \
-  -- python3 -m recipe.dapo.main_dapo \
+python3 -m recipe.corrected_adv.main_corrected_adv \
   data.train_files="${TRAIN_FILE}" \
   data.val_files="${TEST_FILE}" \
   data.prompt_key=prompt \
