@@ -111,6 +111,6 @@ set -x
 
 export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:\$(uv run --no-sync python -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
 
-recipe/corrected_adv/run_baseline.sh
+./recipe/corrected_adv/run_baseline.sh
 
 EOF
