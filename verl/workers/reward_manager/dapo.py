@@ -55,6 +55,7 @@ class DAPORewardManager(AbstractRewardManager):
 
         # If there is rm score, we directly return rm score. Otherwise, we compute via rm_score_fn
         reward_from_rm_scores = self._extract_reward_from_rm_scores(data, return_dict)
+
         if reward_from_rm_scores is not None:
             return reward_from_rm_scores
 
