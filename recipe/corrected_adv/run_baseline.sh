@@ -35,11 +35,11 @@ WORKING_DIR=${WORKING_DIR:-"${PWD}"}
 RUNTIME_ENV=${RUNTIME_ENV:-"${WORKING_DIR}/verl/trainer/runtime_env.yaml"}
 NNODES=${NNODES:-1}
 # Paths
-RAY_DATA_HOME=${RAY_DATA_HOME:-"${HOME}/verl"}
-MODEL_PATH=${MODEL_PATH:-"${RAY_DATA_HOME}/models/DeepSeek-R1-Distill-Qwen-1.5B"}
-CKPTS_DIR=${CKPTS_DIR:-"${RAY_DATA_HOME}/ckpts/${project_name}/${exp_name}"}
-TRAIN_FILE=${TRAIN_FILE:-"${RAY_DATA_HOME}/data/deepscaler/train.parquet"}
-TEST_FILE=${TEST_FILE:-"${RAY_DATA_HOME}/data/deepscaler/aime.parquet"}
+STORAGE_HOME=${STORAGE_HOME:-"${HOME}/storage"}
+MODEL_PATH=${MODEL_PATH:-"${STORAGE_HOME}/models/DeepSeek-R1-Distill-Qwen-1.5B"}
+CKPTS_DIR=${CKPTS_DIR:-"${WORKING_DIR}/ckpts/${project_name}/${exp_name}"}
+TRAIN_FILE=${TRAIN_FILE:-"${STORAGE_HOME}/data/deepscaler/deepscaler-train.parquet"}
+TEST_FILE=${TEST_FILE:-"${STORAGE_HOME}/data/deepscaler/aime-2024.parquet"}
 
 # Algorithm
 temperature=1.0
