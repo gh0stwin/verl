@@ -54,7 +54,7 @@ sp_size=1
 use_dynamic_bsz=True
 actor_ppo_max_token_len=$(((max_prompt_length + max_response_length) / sp_size))
 infer_ppo_max_token_len=$(((max_prompt_length + max_response_length) / sp_size))
-param_offload=False
+param_offload=True
 optim_offload=True
 gen_tp=1
 
@@ -70,6 +70,7 @@ python3 -m recipe.corrected_adv.main_corrected_adv \
   data.gen_batch_size=${gen_prompt_bsz} \
   data.train_batch_size=${train_prompt_bsz} \
   data.shuffle=True \
+  data.filter_overlong_prompts=True \
   actor_rollout_ref.rollout.n=${n_resp_per_prompt} \
   algorithm.adv_estimator=${adv_estimator} \
   algorithm.use_kl_in_reward=${use_kl_in_reward} \
