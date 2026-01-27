@@ -34,6 +34,7 @@ RAY_ADDRESS=${RAY_ADDRESS:-"http://localhost:${PORT}"}
 WORKING_DIR=${WORKING_DIR:-"${PWD}"}
 RUNTIME_ENV=${RUNTIME_ENV:-"${WORKING_DIR}/verl/trainer/runtime_env.yaml"}
 NNODES=${NNODES:-1}
+
 # Paths
 STORAGE_HOME=${STORAGE_HOME:-"${HOME}/storage"}
 MODEL_PATH=${MODEL_PATH:-"${STORAGE_HOME}/models/DeepSeek-R1-Distill-Qwen-1.5B"}
@@ -110,14 +111,16 @@ python3 -m recipe.corrected_adv.main_corrected_adv \
   actor_rollout_ref.rollout.val_kwargs.top_p=${val_top_p} \
   actor_rollout_ref.rollout.val_kwargs.top_k=${top_k} \
   actor_rollout_ref.rollout.val_kwargs.do_sample=True \
-  actor_rollout_ref.rollout.val_kwargs.n=1 \
+  actor_rollout_ref.rollout.val_kwargs.n=4 \
   actor_rollout_ref.rollout.name=vllm \
+  actor_rollout_ref.rollout.gpu_memory_utilization: 0.7 \
   actor_rollout_ref.ref.fsdp_config.param_offload=${param_offload} \
   actor_rollout_ref.ref.ulysses_sequence_parallel_size=${sp_size} \
   actor_rollout_ref.actor.fsdp_config.fsdp_size=-1 \
   reward_model.reward_manager=dler \
   reward_model.overlong_buffer.enable=True \
   reward_model.overlong_buffer.penalty_factor=${overlong_penalty_factor} \
+  reward_model.overlong_buffer.log=True \
   trainer.logger='["console","wandb"]' \
   trainer.project_name="${project_name}" \
   trainer.experiment_name="${exp_name}" \
