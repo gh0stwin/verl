@@ -43,6 +43,7 @@ TRAIN_FILE=${TRAIN_FILE:-"${STORAGE_HOME}/data/deepscaler/deepscaler-train.parqu
 TEST_FILE=${TEST_FILE:-"${STORAGE_HOME}/data/deepscaler/aime-2024.parquet"}
 
 # Algorithm
+GPU_UTIL=${GPU_UTIL:-"0.7"}
 temperature=1.0
 top_p=1.0
 top_k=-1 # 0 for HF rollout, -1 for vLLM rollout
@@ -113,7 +114,7 @@ python3 -m recipe.corrected_adv.main_corrected_adv \
   actor_rollout_ref.rollout.val_kwargs.do_sample=True \
   actor_rollout_ref.rollout.val_kwargs.n=4 \
   actor_rollout_ref.rollout.name=vllm \
-  actor_rollout_ref.rollout.gpu_memory_utilization: 0.7 \
+  actor_rollout_ref.rollout.gpu_memory_utilization=${GPU_UTIL} \
   actor_rollout_ref.ref.fsdp_config.param_offload=${param_offload} \
   actor_rollout_ref.ref.ulysses_sequence_parallel_size=${sp_size} \
   actor_rollout_ref.actor.fsdp_config.fsdp_size=-1 \
