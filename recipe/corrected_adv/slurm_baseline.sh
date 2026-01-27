@@ -1,3 +1,54 @@
+#!/bin/bash
+
+ARGS_LONG="cpu:,mem:,gpu:"
+if ! OPTIONS=$(getopt \
+  -o "" \
+  -l $ARGS_LONG \
+  -- "$@"); then
+  exit 1
+fi
+
+eval set -- "$OPTIONS"
+
+while [ $# -gt 0 ]; do
+  case $1 in
+  --cpu)
+    USER_CPU=${2}
+    shift
+    ;;
+  --mem)
+    USER_MEM=${2}
+    shift
+    ;;
+  --gpu)
+    USER_GPU=${2}
+    shift
+    ;;
+  --)
+    shift
+    break
+    ;;
+  -*)
+    echo "$0: error - unrecognized option $1" 1>&2
+    exit 1
+    ;;
+  *) break ;;
+  esac
+  shift
+done
+
+if [ -z "$USER_CPU" ]; then
+  USER_CPU=8
+fi
+
+if [ -z "$USER_MEM" ]; then
+  USER_MEM=64
+fi
+
+if [ -z "$USER_GPU" ]; then
+  USER_GPU="2"
+fi
+
 sbatch <<EOF
 #!/bin/bash
 #SBATCH --job-name="mllm-coop" # create a short name for your job
