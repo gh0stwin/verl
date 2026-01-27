@@ -116,7 +116,8 @@ python3 -m recipe.corrected_adv.main_corrected_adv \
   actor_rollout_ref.ref.ulysses_sequence_parallel_size=${sp_size} \
   actor_rollout_ref.actor.fsdp_config.fsdp_size=-1 \
   reward_model.reward_manager=dler \
-  reward_model.stop_properly_penalty=${overlong_penalty_factor} \
+  reward_model.overlong_buffer.enable=True \
+  reward_model.overlong_buffer.penalty_factor=${overlong_penalty_factor} \
   trainer.logger='["console","wandb"]' \
   trainer.project_name="${project_name}" \
   trainer.experiment_name="${exp_name}" \

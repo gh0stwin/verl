@@ -32,18 +32,28 @@ class DLERRewardManager(AbstractRewardManager):
         num_examine,
         compute_score=None,
         reward_fn_key="data_source",
-        stop_properly_penalty=None,
+        max_resp_len=None,
+        overlong_buffer_cfg=None,
     ) -> None:
         self.tokenizer = tokenizer
         self.num_examine = num_examine  # the number of batches of decoded responses to print to the console
         self.compute_score = compute_score or default_compute_score
         self.reward_fn_key = reward_fn_key
-        self.stop_properly_penalty = stop_properly_penalty
+        self.max_resp_len = max_resp_len
+        self.overlong_buffer_cfg = overlong_buffer_cfg
+
+        if self.overlong_buffer_cfg is not None:
+            assert self.max_resp_len is not None, (
+                f"max_resp_len must be provided if {overlong_buffer_cfg=}, but got None"
+            )
+            assert self.max_resp_len >= self.overlong_buffer_cfg.len, (
+                "max_resp_len must be larger than overlong_buffer.len"
+            )
 
     def _apply_stop_properly_penalty(self, reward_tensor: torch.Tensor, batch: DataProto):
         # apply stop properly penalty
         # get coefficient from config
-        stop_penalty_coef = self.stop_properly_penalty
+        stop_penalty_coef = self.overlong_buffer_cfg.penalty_factor
         # stop_properly is a tensor of shape (bs) float type
         stop_properly = batch.non_tensor_batch["stop_reason"] == "completed"
         stop_properly = torch.tensor(stop_properly).type(reward_tensor.dtype).device(reward_tensor.device)
@@ -124,7 +134,7 @@ class DLERRewardManager(AbstractRewardManager):
 
         score_tensor = reward_tensor
 
-        if self.stop_properly_penalty is not None:
+        if self.overlong_buffer_cfg.enable:
             reward_tensor = self._apply_stop_properly_penalty(reward_tensor, data)
 
         if return_dict:
