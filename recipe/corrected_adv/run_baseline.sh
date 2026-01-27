@@ -24,9 +24,9 @@ enable_filter_groups=True
 filter_groups_metric=acc
 max_num_gen_batches=10
 train_prompt_bsz=512
-gen_prompt_bsz=$((train_prompt_bsz * 3))
+gen_prompt_bsz=$((train_prompt_bsz * 2))
 n_resp_per_prompt=32
-train_prompt_mini_bsz=2
+train_prompt_mini_bsz=1
 
 # Ray
 PORT=$(($RANDOM % 2000 + 12000))
