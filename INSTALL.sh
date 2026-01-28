@@ -17,3 +17,4 @@ uv pip install nvidia-cudnn-cu12==9.10.2.21
 uv pip install --no-build-isolation flash-attn
 uv pip install "packaging>=20.0" uvicorn fastapi latex2sympy2_extended math_verify
 uv pip install "numpy<2.0.0"
+uv pip install nvidia-nccl-cu12==2.26.5
