@@ -23,9 +23,9 @@ loss_agg_mode="token-mean"
 enable_filter_groups=True
 filter_groups_metric=acc
 max_num_gen_batches=10
-train_prompt_bsz=512
+train_prompt_bsz=16
 gen_prompt_bsz=$((train_prompt_bsz * 2))
-n_resp_per_prompt=32
+n_resp_per_prompt=2
 train_prompt_mini_bsz=1
 
 # Ray
@@ -43,7 +43,7 @@ TRAIN_FILE=${TRAIN_FILE:-"${STORAGE_HOME}/data/deepscaler/deepscaler-train.parqu
 TEST_FILE=${TEST_FILE:-"${STORAGE_HOME}/data/deepscaler/aime-2024.parquet"}
 
 # Algorithm
-GPU_UTIL=${GPU_UTIL:-"0.7"}
+GPU_UTIL=${GPU_UTIL:-"0.6"}
 temperature=1.0
 top_p=1.0
 top_k=-1 # 0 for HF rollout, -1 for vLLM rollout
@@ -59,6 +59,10 @@ optim_offload=True
 gen_tp=1
 
 export VLLM_USE_V1=1
+export VLLM_WORKER_MULTIPROC_METHOD="spawn"
+export GLOO_SOCKET_IFNAME=enp1s0f0np0
+export NCCL_SOCKET_IFNAME=enp1s0f0np0
+export TP_SOCKET_IFNAME=enp1s0f0np0
 
 python3 -m recipe.corrected_adv.main_corrected_adv \
   data.train_files="${TRAIN_FILE}" \

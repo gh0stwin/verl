@@ -7,7 +7,7 @@ channels:
 dependencies:
   # - conda-forge::gxx_linux-64=11
   # - conda-forge::gcc_linux-64=11
-  - python=3.13
+  - python=3.12
   - uv=0.9.26
   - main::cuda-compiler==12.8.1
   - main::cuda-libraries==12.8.1

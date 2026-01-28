@@ -2,7 +2,7 @@
 
 conda env create -f environment.yml -y
 conda activate rlvr
-uv venv .venv --python 3.13 --seed
+uv venv .venv --python 3.12 --seed
 source .venv/bin/activate
 # TODO: environment.yml -> need to install 12.8 :(
 uv pip install --no-cache-dir vllm==0.12.0 --torch-backend=cu128
