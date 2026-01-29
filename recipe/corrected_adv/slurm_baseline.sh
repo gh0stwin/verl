@@ -85,31 +85,16 @@ cd \$TMP_DIR
 source .bashrc
 
 # Copy git repo (already in cfs) and install conda env from $(environment.yml)
-rsync -av --progress --exclude={'checkpoints/*','results/*','.git/*','slurm-*.out','oat-output/*','.nvim','.gemini','.github','docker','docs'} /cfs/home/u021032/dev/rlvr \$HOME
+cd \$HOME/verl
+set -a
+source .env
+set +a
+git pull
 
 # Activate env
-cd \$HOME/rlvr
-export USER_CONDA_ENV=rlvr  # conda env name
+export USER_CONDA_ENV=verl  # conda env name
 conda activate \$USER_CONDA_ENV
 source .venv/bin/activate
-
-# Add CUDA related paths
-NVIDIA_DIR=\$(dirname \$(uv run --no-sync python -c "import nvidia.cudnn;print(nvidia.cudnn.__path__[0])"))
-for dir in \$NVIDIA_DIR/*; do
-    if [ -d "\$dir/lib" ]; then
-        export LD_LIBRARY_PATH="\$dir/lib:\$LD_LIBRARY_PATH"
-    fi
-done
-
-export CUDNN_PATH=\$(uv run --no-sync python -c "import nvidia.cudnn;print(nvidia.cudnn.__path__[0])")
-
-set +x
-set -a
-source .devcontainer/private.env
-set +a
-set -x
-
-export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:\$(uv run --no-sync python -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
 
 ./recipe/corrected_adv/run_baseline.sh
 
