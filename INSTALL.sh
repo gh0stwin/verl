@@ -4,7 +4,6 @@ conda env create -f environment.yml -y
 conda activate verl
 uv venv .venv --python 3.12 --seed
 source .venv/bin/activate
-# TODO: environment.yml -> need to install 12.8 :(
 uv pip install --no-cache-dir vllm==0.12.0 --torch-backend=cu128
 uv pip install "transformers[hf_xet]>=4.51.0" accelerate datasets peft hf-transfer "numpy<2.0.0" "pyarrow>=15.0.0" pandas "tensordict>=0.8.0,<=0.10.0,!=0.9.0" torchdata ray[default] codetiming hydra-core pylatexenc qwen-vl-utils wandb dill pybind11 liger-kernel mathruler pytest py-spy pre-commit ruff tensorboard
 uv pip install git+https://github.com/ShaohonChen/PyExt.git@py311support
@@ -17,4 +16,3 @@ uv pip install nvidia-cudnn-cu12==9.10.2.21
 uv pip install --no-build-isolation flash-attn
 uv pip install "packaging>=20.0" uvicorn fastapi latex2sympy2_extended math_verify
 uv pip install "numpy<2.0.0"
-uv pip install nvidia-nccl-cu12==2.26.5
