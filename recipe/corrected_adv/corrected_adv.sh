@@ -3,7 +3,7 @@ set -xeuo pipefail
 
 SEED=$((((RANDOM << 30) | (RANDOM << 15) | RANDOM) & 0x7fffffff))
 project_name='CorrectedAdv'
-exp_name='CA-DeepSeek-R1-1.5B-${SEED}'
+exp_name="CA-DeepSeek-R1-1.5B-${SEED}"
 
 adv_estimator=reinforce_plus_plus_baseline_stateful
 
