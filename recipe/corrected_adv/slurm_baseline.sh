@@ -86,9 +86,6 @@ source .bashrc
 
 # Copy git repo (already in cfs) and install conda env from $(environment.yml)
 cd \$HOME/verl
-set -a
-source .env
-set +a
 git pull
 
 # Activate env
