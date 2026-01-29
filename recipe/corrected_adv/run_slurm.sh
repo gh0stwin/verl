@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ARGS_LONG="cpu:,mem:,gpu:"
+ARGS_LONG="script:,cpu:,mem:,gpu:"
 if ! OPTIONS=$(getopt \
   -o "" \
   -l $ARGS_LONG \
@@ -12,6 +12,10 @@ eval set -- "$OPTIONS"
 
 while [ $# -gt 0 ]; do
   case $1 in
+  --script)
+    USER_SCRIPT=${2}
+    shift
+    ;;
   --cpu)
     USER_CPU=${2}
     shift
@@ -94,6 +98,6 @@ conda activate \$USER_CONDA_ENV
 source .venv/bin/activate
 
 unset ROCR_VISIBLE_DEVICES
-./recipe/corrected_adv/run_baseline.sh
+./recipe/corrected_adv/${USER_SCRIPT}.sh
 
 EOF

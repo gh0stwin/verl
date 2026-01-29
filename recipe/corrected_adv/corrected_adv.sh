@@ -2,9 +2,9 @@
 set -xeuo pipefail
 
 project_name='CorrectedAdv'
-exp_name='DLER-DeepSeek-R1-1.5B'
+exp_name='CA-DeepSeek-R1-1.5B'
 
-adv_estimator=reinforce_plus_plus_baseline
+adv_estimator=reinforce_plus_plus_baseline_stateful
 
 use_kl_in_reward=False
 kl_coef=0.0
@@ -23,10 +23,10 @@ loss_agg_mode="token-mean"
 enable_filter_groups=True
 filter_groups_metric=acc
 max_num_gen_batches=10
-train_prompt_bsz=4
+train_prompt_bsz=64
 gen_prompt_bsz=$((train_prompt_bsz * 2))
-n_resp_per_prompt=2
-train_prompt_mini_bsz=2
+n_resp_per_prompt=4
+train_prompt_mini_bsz=64
 
 # Ray
 PORT=$(($RANDOM % 2000 + 12000))
@@ -39,7 +39,7 @@ NNODES=${NNODES:-1}
 STORAGE_HOME=${STORAGE_HOME:-"${HOME}/storage"}
 MODEL_PATH=${MODEL_PATH:-"${STORAGE_HOME}/models/DeepSeek-R1-Distill-Qwen-1.5B"}
 CKPTS_DIR=${CKPTS_DIR:-"${WORKING_DIR}/ckpts/${project_name}/${exp_name}"}
-TRAIN_FILE=${TRAIN_FILE:-"${STORAGE_HOME}/data/deepscaler/deepscaler-train.parquet"}
+TRAIN_FILE=${TRAIN_FILE:-"${STORAGE_HOME}/data/deepscaler/deepscaler-train-subset.parquet"}
 TEST_FILE=${TEST_FILE:-"${STORAGE_HOME}/data/deepscaler/aime-2024.parquet"}
 
 # Algorithm
