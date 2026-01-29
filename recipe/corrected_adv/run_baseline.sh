@@ -23,10 +23,10 @@ loss_agg_mode="token-mean"
 enable_filter_groups=True
 filter_groups_metric=acc
 max_num_gen_batches=10
-train_prompt_bsz=512
+train_prompt_bsz=4
 gen_prompt_bsz=$((train_prompt_bsz * 2))
 n_resp_per_prompt=2
-train_prompt_mini_bsz=64
+train_prompt_mini_bsz=2
 
 # Ray
 PORT=$(($RANDOM % 2000 + 12000))
@@ -64,7 +64,7 @@ export GLOO_SOCKET_IFNAME=enp1s0f0np0
 export NCCL_SOCKET_IFNAME=enp1s0f0np0
 export TP_SOCKET_IFNAME=enp1s0f0np0
 
-python3 -m recipe.corrected_adv.main_corrected_adv \
+HYDRA_FULL_ERROR=1 python3 -m recipe.corrected_adv.main_corrected_adv \
   data.train_files="${TRAIN_FILE}" \
   data.val_files="${TEST_FILE}" \
   data.prompt_key=prompt \
@@ -78,15 +78,15 @@ python3 -m recipe.corrected_adv.main_corrected_adv \
   actor_rollout_ref.rollout.n=${n_resp_per_prompt} \
   algorithm.adv_estimator=${adv_estimator} \
   algorithm.use_kl_in_reward=${use_kl_in_reward} \
+  algorithm.filter_groups.enable=${enable_filter_groups} \
+  algorithm.filter_groups.max_num_gen_batches=${max_num_gen_batches} \
+  algorithm.filter_groups.metric=${filter_groups_metric} \
   algorithm.kl_ctrl.kl_coef=${kl_coef} \
   actor_rollout_ref.actor.use_kl_loss=${use_kl_loss} \
   actor_rollout_ref.actor.kl_loss_coef=${kl_loss_coef} \
   actor_rollout_ref.actor.clip_ratio_low=${clip_ratio_low} \
   actor_rollout_ref.actor.clip_ratio_high=${clip_ratio_high} \
   actor_rollout_ref.actor.clip_ratio_c=10.0 \
-  algorithm.filter_groups.enable=${enable_filter_groups} \
-  algorithm.filter_groups.max_num_gen_batches=${max_num_gen_batches} \
-  algorithm.filter_groups.metric=${filter_groups_metric} \
   actor_rollout_ref.model.use_remove_padding=True \
   actor_rollout_ref.actor.use_dynamic_bsz=${use_dynamic_bsz} \
   actor_rollout_ref.ref.log_prob_use_dynamic_bsz=${use_dynamic_bsz} \

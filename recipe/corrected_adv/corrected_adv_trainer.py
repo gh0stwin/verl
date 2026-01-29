@@ -206,7 +206,9 @@ class RayCorrectedAdvTrainer(RayPPOTrainer):
         self._adv_state = self._init_adv_state()
 
     def _init_adv_state(self):
-        print(f"\n\ninit state: {get_torch_device().current_device()}\n\n")
+        if self.config.algorithm.adv_estimator != AdvantageEstimator.REINFORCE_PLUS_PLUS_BASELINE_STATEFUL:
+            return {}
+
         state: dict[str, Any] = {"time": torch.tensor(0)}
         data_file = self.config.data.train_files
         assert isinstance(data_file, str)
@@ -494,7 +496,7 @@ class RayCorrectedAdvTrainer(RayPPOTrainer):
                     with marked_timer("adv", timing_raw, "brown"):
                         # compute advantages, executed on the driver process
                         norm_adv_by_std_in_grpo = self.config.algorithm.get("norm_adv_by_std_in_grpo", True)
-                        batch = compute_advantage(
+                        batch, self._adv_state = compute_advantage(
                             batch,
                             adv_estimator=self.config.algorithm.adv_estimator,
                             gamma=self.config.algorithm.gamma,
