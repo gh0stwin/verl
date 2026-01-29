@@ -1,7 +1,7 @@
 #!/bin/bash
 
 conda env create -f environment.yml -y
-conda activate rlvr
+conda activate verl
 uv venv .venv --python 3.12 --seed
 source .venv/bin/activate
 # TODO: environment.yml -> need to install 12.8 :(

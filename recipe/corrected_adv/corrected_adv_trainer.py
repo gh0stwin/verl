@@ -21,26 +21,40 @@ import uuid
 from collections import defaultdict
 from copy import deepcopy
 from pprint import pprint
+from typing import Any, Optional
 
+import datasets
 import numpy as np
 import torch
+from torch.utils.data import Dataset, Sampler
 from tqdm import tqdm
 
 from verl import DataProto
+from verl.single_controller.ray.base import RayWorkerGroup
 from verl.trainer.config import AlgoConfig
-from verl.trainer.ppo.core_algos import agg_loss
 from verl.trainer.ppo.metric_utils import compute_data_metrics, compute_throughout_metrics, compute_timing_metrics
 from verl.trainer.ppo.ray_trainer import (
-    AdvantageEstimator,
     RayPPOTrainer,
+    ResourcePoolManager,
     apply_kl_penalty,
-    compute_advantage,
     compute_response_mask,
 )
 from verl.trainer.ppo.reward import compute_reward
+from verl.trainer.ppo.utils import Role, WorkerType
+from verl.utils.device import get_torch_device
 from verl.utils.metric import reduce_metrics
 from verl.utils.profiler import marked_timer
 from verl.utils.rollout_skip import RolloutSkip
+
+from .core_algos import (
+    AdvantageEstimator,
+    agg_loss,
+    compute_gae_advantage_return,
+    compute_grpo_outcome_advantage,
+    compute_pf_ppo_reweight_data,
+    compute_reinforce_plus_plus_baseline_stateful_outcome_advantage,
+    get_adv_estimator_fn,
+)
 
 
 def compute_advantage(
@@ -52,7 +66,7 @@ def compute_advantage(
     norm_adv_by_std_in_grpo: bool = True,
     config: AlgoConfig | None = None,
     state: dict[str, torch.Tensor] | None = None,
-) -> DataProto:
+) -> tuple[DataProto, dict[str, Any]]:
     """Compute advantage estimates for policy optimization.
 
     This function computes advantage estimates using various estimators like GAE, GRPO, REINFORCE++, etc.
@@ -71,13 +85,16 @@ def compute_advantage(
     Returns:
         DataProto: The updated data with computed advantages and returns.
     """
+    if state is None:
+        state = {}
+
     # Back-compatible with trainers that do not compute response mask in fit
     if "response_mask" not in data.batch.keys():
         data.batch["response_mask"] = compute_response_mask(data)
     # prepare response group
     if adv_estimator == AdvantageEstimator.GAE:
         # Compute advantages and returns using Generalized Advantage Estimation (GAE)
-        advantages, returns = core_algos.compute_gae_advantage_return(
+        advantages, returns = compute_gae_advantage_return(
             token_level_rewards=data.batch["token_level_rewards"],
             values=data.batch["values"],
             response_mask=data.batch["response_mask"],
@@ -86,30 +103,51 @@ def compute_advantage(
         )
         data.batch["advantages"] = advantages
         data.batch["returns"] = returns
+
         if config.get("use_pf_ppo", False):
-            data = core_algos.compute_pf_ppo_reweight_data(
+            data = compute_pf_ppo_reweight_data(
                 data,
                 config.pf_ppo.get("reweight_method"),
                 config.pf_ppo.get("weight_pow"),
             )
     elif adv_estimator == AdvantageEstimator.GRPO:
-        # Initialize the mask for GRPO calculation
-        grpo_calculation_mask = data.batch["response_mask"]
-
         # Call compute_grpo_outcome_advantage with parameters matching its definition
-        advantages, returns = core_algos.compute_grpo_outcome_advantage(
+        advantages, returns = compute_grpo_outcome_advantage(
             token_level_rewards=data.batch["token_level_rewards"],
-            response_mask=grpo_calculation_mask,
+            response_mask=data.batch["response_mask"],
             index=data.non_tensor_batch["uid"],
             norm_adv_by_std_in_grpo=norm_adv_by_std_in_grpo,
         )
+
         data.batch["advantages"] = advantages
         data.batch["returns"] = returns
-    elif adv_estimator == AdvantageEstimator.REINFORCE_PLUS_PLUS_BASELINE_PROMPT_STATEFUL:
-        data.non_tensor_batch["prompt_id"]
+    elif adv_estimator == AdvantageEstimator.REINFORCE_PLUS_PLUS_BASELINE_STATEFUL:
+        assert isinstance(state, dict)
+        id_mapper = state["id_mapper"]
+        print(f"\n\ncheck batch retrieval: {data.non_tensor_batch['extra_info']['index']}\n\n", flush=True)
+        print(f"\n\ncheck rwd dtype: {data.batch['token_level_rewards'].dtype}\n\n", flush=True)
+        sample_ids = torch.tensor([id_mapper[el.non_tensor_batch["extra_info"]["index"]] for el in data])
+        batch_state = {
+            "time": state["time"],
+            "mean_moment": state["mean_moment"][sample_ids],
+            "var_moment": state["var_moment"][sample_ids],
+        }
+
+        advantages, returns, new_states = compute_reinforce_plus_plus_baseline_stateful_outcome_advantage(
+            token_level_rewards=data.batch["token_level_rewards"],
+            response_mask=data.batch["response_mask"],
+            index=data.non_tensor_batch["uid"],
+            **batch_state,
+        )
+
+        state["time"] += 1
+        state["mean_moment"][sample_ids] = new_states["mean_moment"]
+        state["var_moment"][sample_ids] = new_states["var_moment"]
+        data.batch["advantages"] = advantages
+        data.batch["returns"] = returns
     else:
         # handle all other adv estimator type other than GAE and GRPO
-        adv_estimator_fn = core_algos.get_adv_estimator_fn(adv_estimator)
+        adv_estimator_fn = get_adv_estimator_fn(adv_estimator)
         adv_kwargs = {
             "token_level_rewards": data.batch["token_level_rewards"],
             "response_mask": data.batch["response_mask"],
@@ -125,13 +163,63 @@ def compute_advantage(
         data.batch["advantages"] = advantages
         data.batch["returns"] = returns
 
-    return data
+    return data, state
 
 
 class RayCorrectedAdvTrainer(RayPPOTrainer):
     """
     Note that this trainer runs on the driver process on a single CPU/GPU node.
     """
+
+    def __init__(
+        self,
+        config,
+        tokenizer,
+        role_worker_mapping: dict[Role, WorkerType],
+        resource_pool_manager: ResourcePoolManager,
+        ray_worker_group_cls: type[RayWorkerGroup] = RayWorkerGroup,
+        processor=None,
+        reward_fn=None,
+        val_reward_fn=None,
+        train_dataset: Optional[Dataset] = None,
+        val_dataset: Optional[Dataset] = None,
+        collate_fn=None,
+        train_sampler: Optional[Sampler] = None,
+        device_name=None,
+    ):
+        super().__init__(
+            config,
+            tokenizer,
+            role_worker_mapping,
+            resource_pool_manager,
+            ray_worker_group_cls,
+            processor,
+            reward_fn,
+            val_reward_fn,
+            train_dataset,
+            val_dataset,
+            collate_fn,
+            train_sampler,
+            device_name,
+        )
+
+        self._adv_state = self._init_adv_state()
+
+    def _init_adv_state(self):
+        print(f"\n\ninit state: {get_torch_device().current_device()}\n\n")
+        state: dict[str, Any] = {"time": torch.tensor(0)}
+        data_file = self.config.data.train_files
+        assert isinstance(data_file, str)
+        data = datasets.load_dataset("parquet", data_files=[data_file])["train"]
+        idxs = []
+
+        for sample in data:
+            idxs.append(sample["extra_info"]["index"])
+
+        state["id_mapper"] = dict(zip(idxs, range(len(idxs)), strict=True))
+        state["mean_moment"] = torch.zeros((len(idxs),), dtype=torch.float)
+        state["var_moment"] = torch.zeros((len(idxs),), dtype=torch.float)
+        return state
 
     def compute_kl_related_metrics(self, batch: DataProto, metrics: dict, timing_raw: dict):
         batch.batch["response_mask"] = compute_response_mask(batch)
