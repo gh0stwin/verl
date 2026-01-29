@@ -1,8 +1,9 @@
 #!/bin/bash
 set -xeuo pipefail
 
+SEED=$((((RANDOM << 30) | (RANDOM << 15) | RANDOM) & 0x7fffffff))
 project_name='CorrectedAdv'
-exp_name='DLER-DeepSeek-R1-1.5B'
+exp_name='DLER-DeepSeek-R1-1.5B-${SEED}'
 
 adv_estimator=reinforce_plus_plus_baseline
 
@@ -75,6 +76,7 @@ HYDRA_FULL_ERROR=1 python3 -m recipe.corrected_adv.main_corrected_adv \
   data.train_batch_size=${train_prompt_bsz} \
   data.shuffle=True \
   data.filter_overlong_prompts=True \
+  data.seed=$((SEED + 1)) \
   actor_rollout_ref.rollout.n=${n_resp_per_prompt} \
   algorithm.adv_estimator=${adv_estimator} \
   algorithm.use_kl_in_reward=${use_kl_in_reward} \
@@ -120,6 +122,7 @@ HYDRA_FULL_ERROR=1 python3 -m recipe.corrected_adv.main_corrected_adv \
   actor_rollout_ref.rollout.val_kwargs.n=4 \
   actor_rollout_ref.rollout.name=vllm \
   +actor_rollout_ref.rollout.engine_kwargs.vllm.max_model_len=$((max_prompt_length + max_response_length)) \
+  +actor_rollout_ref.rollout.engine_kwargs.vllm.seed=${SEED} \
   actor_rollout_ref.rollout.gpu_memory_utilization=${GPU_UTIL} \
   actor_rollout_ref.ref.fsdp_config.param_offload=${param_offload} \
   actor_rollout_ref.ref.ulysses_sequence_parallel_size=${sp_size} \
