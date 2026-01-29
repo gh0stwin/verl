@@ -503,6 +503,7 @@ class RayCorrectedAdvTrainer(RayPPOTrainer):
                             lam=self.config.algorithm.lam,
                             num_repeat=self.config.actor_rollout_ref.rollout.n,
                             norm_adv_by_std_in_grpo=norm_adv_by_std_in_grpo,
+                            state=self._adv_state,
                         )
 
                     # update critic
