@@ -137,6 +137,7 @@ def compute_advantage(
             token_level_rewards=data.batch["token_level_rewards"],
             response_mask=data.batch["response_mask"],
             index=data.non_tensor_batch["uid"],
+            config=config,
             **batch_state,
         )
 
@@ -496,6 +497,7 @@ class RayCorrectedAdvTrainer(RayPPOTrainer):
                     with marked_timer("adv", timing_raw, "brown"):
                         # compute advantages, executed on the driver process
                         norm_adv_by_std_in_grpo = self.config.algorithm.get("norm_adv_by_std_in_grpo", True)
+                        print(self.config)
                         batch, self._adv_state = compute_advantage(
                             batch,
                             adv_estimator=self.config.algorithm.adv_estimator,
