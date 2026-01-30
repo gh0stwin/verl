@@ -124,9 +124,9 @@ def compute_advantage(
     elif adv_estimator == AdvantageEstimator.REINFORCE_PLUS_PLUS_BASELINE_STATEFUL:
         assert isinstance(state, dict)
         id_mapper = state["id_mapper"]
-        print(f"\n\ncheck batch retrieval: {data.non_tensor_batch['extra_info']['index']}\n\n", flush=True)
-        print(f"\n\ncheck rwd dtype: {data.batch['token_level_rewards'].dtype}\n\n", flush=True)
-        sample_ids = torch.tensor([id_mapper[el.non_tensor_batch["extra_info"]["index"]] for el in data])
+        # print(f"\n\ncheck batch retrieval: {data.non_tensor_batch['extra_info']['index']}\n\n", flush=True)
+        # print(f"\n\ncheck rwd dtype: {data.batch['token_level_rewards'].dtype}\n\n", flush=True)
+        sample_ids = torch.tensor([id_mapper[el["index"]] for el in data.non_tensor_batch["extra_info"]])
         batch_state = {
             "time": state["time"],
             "mean_moment": state["mean_moment"][sample_ids],
@@ -503,6 +503,7 @@ class RayCorrectedAdvTrainer(RayPPOTrainer):
                             lam=self.config.algorithm.lam,
                             num_repeat=self.config.actor_rollout_ref.rollout.n,
                             norm_adv_by_std_in_grpo=norm_adv_by_std_in_grpo,
+                            config=self.config.algorithm,
                             state=self._adv_state,
                         )
 
