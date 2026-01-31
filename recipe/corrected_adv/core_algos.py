@@ -526,7 +526,7 @@ def compute_reinforce_plus_plus_baseline_stateful_outcome_advantage(
         for i in range(bsz):
             scores[i] = scores[i] - id2mean[index[i]]
 
-        scores = verl_F.masked_whiten(scores, torch.ones_like(scores))  # (bs,)
+        # scores = verl_F.masked_whiten(scores, torch.ones_like(scores))  # (bs,)
         assert scores.ndim == mean_state.ndim == var_state.ndim == 1
         assert scores.shape[0] == mean_state.shape[0] == var_state.shape[0]
         mean_moment = config.mean_decay * mean_state + (1 - config.mean_decay) * scores
@@ -535,7 +535,7 @@ def compute_reinforce_plus_plus_baseline_stateful_outcome_advantage(
         corr_var_moment = var_moment / (1 - config.var_decay**time_state)
         scores = corr_mean_moment / (torch.sqrt(corr_var_moment) + epsilon)
         scores = scores.unsqueeze(-1).tile([1, response_length]) * response_mask
-        # scores = verl_F.masked_whiten(scores, response_mask) * response_mask
+        scores = verl_F.masked_whiten(scores, response_mask) * response_mask
 
     return scores, scores, {"mean_moment": mean_moment, "var_moment": var_moment}
 

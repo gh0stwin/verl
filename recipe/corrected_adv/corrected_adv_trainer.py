@@ -210,7 +210,7 @@ class RayCorrectedAdvTrainer(RayPPOTrainer):
         if self.config.algorithm.adv_estimator != AdvantageEstimator.REINFORCE_PLUS_PLUS_BASELINE_STATEFUL:
             return {}
 
-        state: dict[str, Any] = {"time": torch.tensor(0)}
+        state: dict[str, Any] = {"time": torch.tensor(1)}
         data_file = self.config.data.train_files
         assert isinstance(data_file, str)
         data = datasets.load_dataset("parquet", data_files=[data_file])["train"]
