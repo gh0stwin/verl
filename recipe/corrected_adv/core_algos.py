@@ -526,8 +526,8 @@ def compute_reinforce_plus_plus_baseline_stateful_outcome_advantage(
         assert len(mean_mom) == len(var_mom) == len(id2mean)
 
         for idx in id2mean:
-            mean_mom[idx] = config.mean_decay * mean_mom + (1 - config.mean_decay) * id2mean[idx]
-            var_mom[idx] = config.var_decay * var_mom + (1 - config.var_decay) * id2mean[idx] ** 2
+            mean_mom[idx] = config.mean_decay * mean_mom[idx] + (1 - config.mean_decay) * id2mean[idx]
+            var_mom[idx] = config.var_decay * var_mom[idx] + (1 - config.var_decay) * id2mean[idx] ** 2
             corr_mean_mom = mean_mom / (1 - config.mean_decay**time_state)
             corr_var_mom = var_mom / (1 - config.var_decay**time_state)
 
