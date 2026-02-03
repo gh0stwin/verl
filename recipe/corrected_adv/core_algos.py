@@ -507,7 +507,7 @@ def compute_reinforce_plus_plus_baseline_stateful_outcome_advantage(
     response_length = token_level_rewards.shape[-1]
     scores = token_level_rewards.sum(dim=-1)
     id2score = defaultdict(list)
-    id2mean = {}
+    id2mean, corr_mean_mom, corr_var_mom = {}, {}, {}
 
     with torch.no_grad():
         bsz = scores.shape[0]
@@ -528,12 +528,12 @@ def compute_reinforce_plus_plus_baseline_stateful_outcome_advantage(
         for idx in id2mean:
             mean_mom[idx] = config.mean_decay * mean_mom[idx] + (1 - config.mean_decay) * id2mean[idx]
             var_mom[idx] = config.var_decay * var_mom[idx] + (1 - config.var_decay) * id2mean[idx] ** 2
-            corr_mean_mom = mean_mom / (1 - config.mean_decay**time_state)
-            corr_var_mom = var_mom / (1 - config.var_decay**time_state)
+            corr_mean_mom[idx] = mean_mom[idx] / (1 - config.mean_decay**time_state)
+            corr_var_mom[idx] = var_mom[idx] / (1 - config.var_decay**time_state)
 
         for i in range(bsz):
             idx = index[i]
-            scores[i] = scores[i] - corr_mean_mom[idx] / (torch.sqrt(corr_var_mom) + epsilon)  # id2mean[index[i]]
+            scores[i] = scores[i] - corr_mean_mom[idx] / (torch.sqrt(corr_var_mom[idx]) + epsilon)  # id2mean[index[i]]
 
         scores = scores.unsqueeze(-1).tile([1, response_length]) * response_mask
         scores = verl_F.masked_whiten(scores, response_mask) * response_mask
