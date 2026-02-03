@@ -127,12 +127,15 @@ def compute_advantage(
         print(f"\n\ncheck batch retrieval: {data.non_tensor_batch['uid']}\n\n", flush=True)
         id_mapper = state["id_mapper"]
         sample_ids = [int(id_mapper[el["index"]]) for el in data.non_tensor_batch["extra_info"]]
-        unique_sample_ids = list(set(sample_ids))
+        # unique_sample_ids = list(set(sample_ids))
         assert len(sample_ids) == len(data.non_tensor_batch["uid"])
-        uid_mapper = dict(zip(data.non_tensor_batch["uid"], unique_sample_ids, strict=True))
+        # uid_mapper = dict(zip(list(set(data.non_tensor_batch["uid"])), unique_sample_ids, strict=True))
         mean_moment, var_moment = {}, {}
 
-        for uid, idx in uid_mapper.items():
+        for uid, idx in zip(data.non_tensor_batch["uid"], sample_ids, strict=True):
+            if uid in mean_moment:
+                continue
+
             mean_moment[uid] = state["mean_moment"][idx]
             var_moment[uid] = state["var_moment"][idx]
 
@@ -145,7 +148,13 @@ def compute_advantage(
             **batch_state,
         )
 
-        for uid, idx in uid_mapper.items():
+        done = set()
+
+        for uid, idx in zip(data.non_tensor_batch["uid"], sample_ids, strict=True):
+            if uid in done:
+                continue
+
+            done.add(uid)
             state["mean_moment"][idx] = new_state["mean_moment"][uid]
             state["var_moment"][idx] = new_state["var_moment"][uid]
 
