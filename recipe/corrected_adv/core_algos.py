@@ -501,8 +501,8 @@ def compute_reinforce_plus_plus_baseline_stateful_outcome_advantage(
         info: `dict[str, torch.Tensor]`
             shape: ()
     """
-    mean_state = kwargs["mean_moment"]
-    var_state = kwargs["var_moment"]
+    mean_mom = kwargs["mean_moment"]
+    var_mom = kwargs["var_moment"]
     time_state = kwargs["time"]
     response_length = token_level_rewards.shape[-1]
     scores = token_level_rewards.sum(dim=-1)
@@ -523,21 +523,22 @@ def compute_reinforce_plus_plus_baseline_stateful_outcome_advantage(
             else:
                 raise ValueError(f"no score in prompt index: {idx}")
 
-        for i in range(bsz):
-            scores[i] = scores[i] - id2mean[index[i]]
+        assert len(mean_mom) == len(var_mom) == len(id2mean)
 
-        # scores = verl_F.masked_whiten(scores, torch.ones_like(scores))  # (bs,)
-        assert scores.ndim == mean_state.ndim == var_state.ndim == 1
-        assert scores.shape[0] == mean_state.shape[0] == var_state.shape[0]
-        mean_moment = config.mean_decay * mean_state + (1 - config.mean_decay) * scores
-        var_moment = config.var_decay * var_state + (1 - config.var_decay) * scores**2
-        corr_mean_moment = mean_moment / (1 - config.mean_decay**time_state)
-        corr_var_moment = var_moment / (1 - config.var_decay**time_state)
-        scores = corr_mean_moment / (torch.sqrt(corr_var_moment) + epsilon)
+        for idx in id2mean:
+            mean_mom[idx] = config.mean_decay * mean_mom + (1 - config.mean_decay) * id2mean[idx]
+            var_mom[idx] = config.var_decay * var_mom + (1 - config.var_decay) * id2mean[idx] ** 2
+            corr_mean_mom = mean_mom / (1 - config.mean_decay**time_state)
+            corr_var_mom = var_mom / (1 - config.var_decay**time_state)
+
+        for i in range(bsz):
+            idx = index[i]
+            scores[i] = scores[i] - corr_mean_mom[idx] / (torch.sqrt(corr_var_mom) + epsilon)  # id2mean[index[i]]
+
         scores = scores.unsqueeze(-1).tile([1, response_length]) * response_mask
         scores = verl_F.masked_whiten(scores, response_mask) * response_mask
 
-    return scores, scores, {"mean_moment": mean_moment, "var_moment": var_moment}
+    return scores, scores, {"mean_moment": mean_mom, "var_moment": var_mom}
 
 
 @register_adv_est(AdvantageEstimator.RLOO)  # or simply: @register_adv_est("rloo")

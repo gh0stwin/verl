@@ -123,17 +123,21 @@ def compute_advantage(
         data.batch["returns"] = returns
     elif adv_estimator == AdvantageEstimator.REINFORCE_PLUS_PLUS_BASELINE_STATEFUL:
         assert isinstance(state, dict)
+        print(f"\n\ncheck batch retrieval: {data.non_tensor_batch['extra_info']}\n\n", flush=True)
+        print(f"\n\ncheck batch retrieval: {data.non_tensor_batch['uid']}\n\n", flush=True)
         id_mapper = state["id_mapper"]
-        # print(f"\n\ncheck batch retrieval: {data.non_tensor_batch['extra_info']['index']}\n\n", flush=True)
-        # print(f"\n\ncheck rwd dtype: {data.batch['token_level_rewards'].dtype}\n\n", flush=True)
-        sample_ids = torch.tensor([id_mapper[el["index"]] for el in data.non_tensor_batch["extra_info"]])
-        batch_state = {
-            "time": state["time"],
-            "mean_moment": state["mean_moment"][sample_ids],
-            "var_moment": state["var_moment"][sample_ids],
-        }
+        sample_ids = [int(id_mapper[el["index"]]) for el in data.non_tensor_batch["extra_info"]]
+        unique_sample_ids = list(set(sample_ids))
+        assert len(sample_ids) == len(data.non_tensor_batch["uid"])
+        uid_mapper = dict(zip(data.non_tensor_batch["uid"], unique_sample_ids, strict=True))
+        mean_moment, var_moment = {}, {}
 
-        advantages, returns, new_states = compute_reinforce_plus_plus_baseline_stateful_outcome_advantage(
+        for uid, idx in uid_mapper.items():
+            mean_moment[uid] = state["mean_moment"][idx]
+            var_moment[uid] = state["var_moment"][idx]
+
+        batch_state = {"time": state["time"], "mean_moment": mean_moment, "var_moment": mean_moment}
+        advantages, returns, new_state = compute_reinforce_plus_plus_baseline_stateful_outcome_advantage(
             token_level_rewards=data.batch["token_level_rewards"],
             response_mask=data.batch["response_mask"],
             index=data.non_tensor_batch["uid"],
@@ -141,9 +145,11 @@ def compute_advantage(
             **batch_state,
         )
 
+        for uid, idx in uid_mapper.items():
+            state["mean_moment"][idx] = new_state["mean_moment"][uid]
+            state["var_moment"][idx] = new_state["var_moment"][uid]
+
         state["time"] += 1
-        state["mean_moment"][sample_ids] = new_states["mean_moment"]
-        state["var_moment"][sample_ids] = new_states["var_moment"]
         data.batch["advantages"] = advantages
         data.batch["returns"] = returns
     else:
