@@ -9,11 +9,6 @@ defaults:
 data:
   gen_batch_size: ${data.train_batch_size}
 
-critic:
-  min_return: 0.0
-  max_return: 1.0
-  num_labels: 255
-
 reward_model:
   reward_manager: dapo
   overlong_buffer: 
