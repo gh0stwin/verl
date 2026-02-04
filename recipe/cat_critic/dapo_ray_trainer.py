@@ -26,21 +26,23 @@ from typing import Optional
 import numpy as np
 import torch
 from omegaconf import OmegaConf
+from torch.utils.data import Dataset, Sampler
 from tqdm import tqdm
 
 from verl import DataProto
 from verl.single_controller.ray import RayClassWithInitArgs
-from verl.single_controller.ray.base import create_colocated_worker_cls
+from verl.single_controller.ray.base import RayWorkerGroup, create_colocated_worker_cls
 from verl.trainer.config.algorithm import AlgoConfig
 from verl.trainer.ppo.core_algos import agg_loss
 from verl.trainer.ppo.metric_utils import compute_data_metrics, compute_throughout_metrics, compute_timing_metrics
 from verl.trainer.ppo.ray_trainer import (
     RayPPOTrainer,
+    ResourcePoolManager,
     apply_kl_penalty,
     compute_response_mask,
 )
 from verl.trainer.ppo.reward import compute_reward
-from verl.trainer.ppo.utils import Role
+from verl.trainer.ppo.utils import Role, WorkerType
 from verl.utils.config import omega_conf_to_dataclass
 from verl.utils.import_utils import load_class_from_fqn
 from verl.utils.metric import reduce_metrics
