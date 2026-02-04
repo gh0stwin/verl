@@ -98,6 +98,6 @@ conda activate \$USER_CONDA_ENV
 source .venv/bin/activate
 
 unset ROCR_VISIBLE_DEVICES
-./recipe/corrected_adv/${USER_SCRIPT}.sh
+./recipe/cat_critic/${USER_SCRIPT}.sh
 
 EOF
