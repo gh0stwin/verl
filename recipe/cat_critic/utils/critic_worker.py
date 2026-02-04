@@ -138,7 +138,7 @@ class CriticWorker(Worker, DistProfilerExtension):
         from verl.utils.model import print_model_size
         from verl.utils.torch_dtypes import PrecisionType
 
-        from .utils.value_head import load_categorical_valuehead_model
+        from .value_head import load_categorical_valuehead_model
 
         use_shm = config.model.get("use_shm", False)
         local_path = copy_to_local(config.model.path, use_shm=use_shm)
