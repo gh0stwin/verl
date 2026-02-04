@@ -56,6 +56,7 @@ from .utils.core_algos import (
     compute_pf_ppo_reweight_data,
     get_adv_estimator_fn,
 )
+from .utils.utils import need_critic
 
 
 def compute_advantage(
@@ -156,6 +157,40 @@ class RayDAPOTrainer(RayPPOTrainer):
     """
     Note that this trainer runs on the driver process on a single CPU/GPU node.
     """
+
+    def __init__(
+        self,
+        config,
+        tokenizer,
+        role_worker_mapping: dict[Role, WorkerType],
+        resource_pool_manager: ResourcePoolManager,
+        ray_worker_group_cls: type[RayWorkerGroup] = RayWorkerGroup,
+        processor=None,
+        reward_fn=None,
+        val_reward_fn=None,
+        train_dataset: Optional[Dataset] = None,
+        val_dataset: Optional[Dataset] = None,
+        collate_fn=None,
+        train_sampler: Optional[Sampler] = None,
+        device_name=None,
+    ):
+        super().__init__(
+            config,
+            tokenizer,
+            role_worker_mapping,
+            resource_pool_manager,
+            ray_worker_group_cls,
+            processor,
+            reward_fn,
+            val_reward_fn,
+            train_dataset,
+            val_dataset,
+            collate_fn,
+            train_sampler,
+            device_name,
+        )
+
+        self.use_critic = need_critic(self.config)
 
     def init_workers(self):
         """Initialize distributed training workers using Ray backend.
