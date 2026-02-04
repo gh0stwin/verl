@@ -43,10 +43,11 @@ from verl.utils.fsdp_utils import (
 from verl.utils.import_utils import import_external_libs
 from verl.utils.profiler import DistProfiler, DistProfilerExtension, ProfilerConfig, log_gpu_memory_usage
 from verl.utils.py_functional import convert_to_regular_types
-from verl.workers.config import FSDPCriticConfig
 from verl.workers.config.optimizer import build_optimizer
 from verl.workers.fsdp_workers import create_device_mesh, get_sharding_strategy, get_vl_model_vision_tower
 from verl.workers.sharding_manager.fsdp_ulysses import FSDPUlyssesShardingManager
+
+from .configs import FSDPCatCriticConfig as FSDPCriticConfig
 
 
 class CriticWorker(Worker, DistProfilerExtension):
