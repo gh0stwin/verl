@@ -25,6 +25,7 @@ algorithm:
     max_num_gen_batches: 0 # Non-positive values mean no upper limit
   min_return: 0.0
   max_return: 1.0
+  n_bins: 255
 
 trainer:
   project_name: verl-dapo
