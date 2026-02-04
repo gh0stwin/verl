@@ -20,7 +20,7 @@ from verl.utils import as_torch_index, group_mean_std
 from verl.utils.import_utils import deprecated
 from verl.workers.config import ActorConfig
 
-from .utils.functional import symexp, symlog
+from .functional import symexp, symlog
 
 PolicyLossFn = Callable[
     [
