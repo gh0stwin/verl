@@ -43,11 +43,10 @@ from verl.utils.fsdp_utils import (
 from verl.utils.import_utils import import_external_libs
 from verl.utils.profiler import DistProfiler, DistProfilerExtension, ProfilerConfig, log_gpu_memory_usage
 from verl.utils.py_functional import convert_to_regular_types
+from verl.workers.config import FSDPCriticConfig
 from verl.workers.config.optimizer import build_optimizer
 from verl.workers.fsdp_workers import create_device_mesh, get_sharding_strategy, get_vl_model_vision_tower
 from verl.workers.sharding_manager.fsdp_ulysses import FSDPUlyssesShardingManager
-
-from .configs import FSDPCatCriticConfig as FSDPCriticConfig
 
 
 class CriticWorker(Worker, DistProfilerExtension):
@@ -183,7 +182,7 @@ class CriticWorker(Worker, DistProfilerExtension):
         if self.ulysses_sequence_parallel_size > 1 and hasattr(critic_model_config, "vision_config"):
             critic_model_config.vision_config._attn_implementation = "eager"
 
-        critic_model_config.num_labels = 1
+        critic_model_config.num_labels = 255
         # patch for kimi-vl
         if getattr(critic_model_config, "model_type", None) == "kimi_vl":
             critic_model_config.text_config.topk_method = "greedy"
@@ -206,7 +205,7 @@ class CriticWorker(Worker, DistProfilerExtension):
             critic_model_config.classifier_dropout = 0.0
             critic_model_config.hidden_dropout = "0"
             critic_model_config.summary_dropout_prob = 0.0
-            critic_model_config.num_labels = config.num_labels
+            critic_model_config.num_labels = 255
 
             critic_module = load_categorical_valuehead_model(
                 local_path,
