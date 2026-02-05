@@ -1698,8 +1698,10 @@ def compute_two_hot_encoding_value_loss(
     target = target.squeeze(-2)
     # target = target.unsqueeze(-1)
     print("two-hot enconding")
-    print(value_logits.shape, target.shape)
-    return (target * log_pred).sum(-1) * response_mask
+    print(log_pred.shape, target.shape)
+    loss = (target * log_pred).sum(-1) * response_mask
+    loss = agg_loss(loss_mat=loss, loss_mask=response_mask, loss_agg_mode=loss_agg_mode)
+    return loss
 
     ###
     vpredclipped = verl_F.clip_by_value(vpreds, values - cliprange_value, values + cliprange_value)
