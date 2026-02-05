@@ -388,7 +388,7 @@ class CriticWorker(Worker, DistProfilerExtension):
         # This is used to import external_lib into the huggingface systems
         import_external_libs(self.config.model.get("external_lib", None))
 
-        from verl.workers.critic import DataParallelPPOCritic
+        from .dp_critic import DataParallelPPOCritic
 
         self.critic_module, self.critic_optimizer, self.critic_lr_scheduler = self._build_critic_model_optimizer(
             self.config

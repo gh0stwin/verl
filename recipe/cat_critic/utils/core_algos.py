@@ -1642,6 +1642,78 @@ def compute_value_loss(
     return vf_loss, vf_clipfrac
 
 
+def compute_two_hot_encoding_value_loss(
+    value_logits: torch.Tensor,
+    returns: torch.Tensor,
+    response_mask: torch.Tensor,
+    config: AlgoConfig,
+    loss_agg_mode: str = "token-mean",
+):
+    """
+    Compute the clipped value-function loss for PPO.
+
+    Copied from https://github.com/huggingface/trl/blob/main/trl/trainer/ppo_trainer.py#L1151
+
+    Args:
+        vpreds (torch.FloatTensor):
+            Predicted values from the value head, shape (batch_size, response_length, n_bins).
+        returns (torch.FloatTensor):
+            Ground-truth returns, shape (batch_size, response_length).
+        response_mask (torch.Tensor):
+            Mask indicating which tokens to include in the value loss calculation.
+        cliprange_value (float):
+            Clip range for value prediction updates.
+        loss_agg_mode (str, optional):
+            Aggregation mode for `agg_loss`. Defaults to "token-mean".
+
+    Returns:
+        vf_loss (torch.FloatTensor):
+            A scalar tensor containing the aggregated value-function loss.
+        vf_clipfrac (float):
+            Fraction of elements where the clipped loss was used.
+    """
+    assert value_logits.ndim == 3
+    assert value_logits.shape[-1] == config.n_bins
+    min_return = config.min_return  # defined in the linear scale
+    max_return = config.max_return  # defined in the linear scale
+    min_bucket = symlog(torch.tensor(min_return))
+    max_bucket = symlog(torch.tensor(max_return))
+
+    min_bucket = symlog(torch.tensor(min_return))
+    max_bucket = symlog(torch.tensor(max_return))
+    buckets = torch.linspace(min_bucket, max_bucket, value_logits.shape[-1], device=value_logits.device)
+
+    below = torch.sum((buckets <= returns[..., None]).to(torch.int32), dim=-1) - 1  # number of buckets below
+    above = len(buckets) - torch.sum((buckets > returns[..., None]).to(torch.int32), dim=-1)  # number of buckets above
+
+    # this is implemented using clip as the gradients are not backpropagated for the out of limits.
+    below = torch.clip(below, 0, len(buckets) - 1)
+    above = torch.clip(above, 0, len(buckets) - 1)
+    equal = below == above
+    dist_to_below = torch.where(equal, 1, torch.abs(buckets[below] - returns))
+    dist_to_above = torch.where(equal, 1, torch.abs(buckets[above] - returns))
+    total = dist_to_below + dist_to_above
+    weight_below = dist_to_above / total
+    weight_above = dist_to_below / total
+    target = torch.nn.functional.one_hot(below, num_classes=len(buckets)) * weight_below[..., None]
+    target += torch.nn.functional.one_hot(above, num_classes=len(buckets)) * weight_above[..., None]
+    log_pred = value_logits - torch.logsumexp(value_logits, -1, keepdim=True)
+    target = target.squeeze(-2)
+    # target = target.unsqueeze(-1)
+    print("two-hot enconding")
+    print(value_logits.shape, target.shape)
+    return (target * log_pred).sum(-1) * response_mask
+
+    ###
+    vpredclipped = verl_F.clip_by_value(vpreds, values - cliprange_value, values + cliprange_value)
+    vf_losses1 = (vpreds - returns) ** 2
+    vf_losses2 = (vpredclipped - returns) ** 2
+    clipped_vf_losses = torch.max(vf_losses1, vf_losses2)
+    vf_loss = 0.5 * agg_loss(loss_mat=clipped_vf_losses, loss_mask=response_mask, loss_agg_mode=loss_agg_mode)
+    vf_clipfrac = verl_F.masked_mean(torch.gt(vf_losses2, vf_losses1).float(), response_mask)
+    return vf_loss, vf_clipfrac
+
+
 def kl_penalty(logprob: torch.FloatTensor, ref_logprob: torch.FloatTensor, kl_penalty) -> torch.FloatTensor:
     """Compute KL divergence given logprob and ref_logprob. Optionally using straight through to bind k2 on other
     kl penalty compute method for unbiased KL gradient estimation.

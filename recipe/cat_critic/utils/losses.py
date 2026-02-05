@@ -47,6 +47,7 @@ def two_hot_encoding_value_loss(config: CriticConfig, model_output, data: Tensor
     Returns:
         value loss
     """
+    print("THIS IS NOT BEING USED", flush=True)
     print("CHECK SHAPES:")
     print(model_output["value_logits"].shape)
     print(data["returns"].shape)

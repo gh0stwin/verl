@@ -7,7 +7,6 @@ from torch import nn, optim
 from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
 
 from verl import DataProto
-from verl.trainer.ppo import core_algos
 from verl.utils.attention_utils import index_first_axis, pad_input, rearrange, unpad_input
 from verl.utils.device import get_device_id, get_device_name
 from verl.utils.fsdp_utils import FSDPModule, fsdp2_clip_grad_norm_
@@ -17,6 +16,8 @@ from verl.utils.seqlen_balancing import prepare_dynamic_batch, restore_dynamic_b
 from verl.utils.torch_functional import masked_mean
 from verl.utils.ulysses import gather_outputs_and_unpad, ulysses_pad_and_slice_inputs
 from verl.workers.critic import BasePPOCritic
+
+from .core_algos import compute_two_hot_encoding_value_loss
 
 logger = logging.getLogger(__file__)
 logger.setLevel(os.getenv("VERL_LOGGING_LEVEL", "WARN"))
@@ -112,6 +113,7 @@ class DataParallelPPOCritic(BasePPOCritic):
                 else:
                     values = output.logits
                 # values = values[:, -response_length - 1 : -1].squeeze(-1)
+                print(f"VALUE_LOGITS: {values.shape}", flush=True)
             return values
 
     def _optimizer_step(self):
@@ -207,16 +209,15 @@ class DataParallelPPOCritic(BasePPOCritic):
                     micro_batch_metrics = {}
                     model_inputs = {**micro_batch.batch, **micro_batch.non_tensor_batch}
                     response_mask = model_inputs["response_mask"]
-                    values = model_inputs["values"]
+                    # values = model_inputs["values"]
                     returns = model_inputs["returns"]
 
-                    vpreds = self._forward_micro_batch(model_inputs)
-                    vf_loss, vf_clipfrac = core_algos.compute_value_loss(
-                        vpreds=vpreds,
-                        values=values,
+                    value_logits = self._forward_micro_batch(model_inputs)
+                    vf_loss = compute_two_hot_encoding_value_loss(
+                        value_logits=value_logits,
                         returns=returns,
                         response_mask=response_mask,
-                        cliprange_value=self.config.cliprange_value,
+                        config=self.config,
                         loss_agg_mode=self.config.loss_agg_mode,
                     )
                     if self.config.use_dynamic_bsz:
@@ -229,12 +230,12 @@ class DataParallelPPOCritic(BasePPOCritic):
 
                     loss.backward()
 
-                    micro_batch_metrics.update(
-                        {
-                            "critic/vf_clipfrac": vf_clipfrac.detach().item(),
-                            "critic/vpred_mean": masked_mean(vpreds, response_mask).detach().item(),
-                        }
-                    )
+                    # micro_batch_metrics.update(
+                    #     {
+                    #         "critic/vf_clipfrac": vf_clipfrac.detach().item(),
+                    #         "critic/vpred_mean": masked_mean(vpreds, response_mask).detach().item(),
+                    #     }
+                    # )
 
                     metrics["critic/vf_loss"] += vf_loss.detach().item() * loss_scale_factor
                     append_to_dict(metrics, micro_batch_metrics)
