@@ -112,8 +112,6 @@ class DataParallelPPOCritic(BasePPOCritic):
                     values = output[2]
                 else:
                     values = output.logits
-                # values = values[:, -response_length - 1 : -1].squeeze(-1)
-                print(f"VALUE_LOGITS: {values.shape}", flush=True)
             return values
 
     def _optimizer_step(self):
@@ -170,7 +168,7 @@ class DataParallelPPOCritic(BasePPOCritic):
         if "response_mask" in data.batch:
             response_mask = data.batch["response_mask"]
             response_mask = response_mask.to(values.device)
-            values = values * response_mask  # Only action tokens have values
+            values = values * response_mask.unsqueeze(-1)  # Only action tokens have values
         return values
 
     @GPUMemoryLogger(role="dp critic", logger=logger)
