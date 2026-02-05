@@ -1673,14 +1673,11 @@ def compute_two_hot_encoding_value_loss(
             Fraction of elements where the clipped loss was used.
     """
     assert value_logits.ndim == 3
-    assert value_logits.shape[-1] == config.n_bins
-    min_return = config.min_return  # defined in the linear scale
-    max_return = config.max_return  # defined in the linear scale
+    min_return = 0.0  # defined in the linear scale
+    max_return = 1.0  # defined in the linear scale
     min_bucket = symlog(torch.tensor(min_return))
     max_bucket = symlog(torch.tensor(max_return))
-
-    min_bucket = symlog(torch.tensor(min_return))
-    max_bucket = symlog(torch.tensor(max_return))
+    returns = symlog(returns)
     buckets = torch.linspace(min_bucket, max_bucket, value_logits.shape[-1], device=value_logits.device)
 
     below = torch.sum((buckets <= returns[..., None]).to(torch.int32), dim=-1) - 1  # number of buckets below
