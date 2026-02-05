@@ -111,7 +111,7 @@ def compute_advantage(
             )
     elif adv_estimator == AdvantageEstimator.GAE_CAT:
         assert config is not None
-        advantages, returns = compute_gae_cat_advantage_return(
+        values, advantages, returns = compute_gae_cat_advantage_return(
             token_level_rewards=data.batch["token_level_rewards"],
             value_logits=data.batch["values"],
             response_mask=data.batch["response_mask"],
@@ -120,6 +120,7 @@ def compute_advantage(
             config=config,
         )
 
+        data.batch["values"] = values
         data.batch["advantages"] = advantages
         data.batch["returns"] = returns
     elif adv_estimator == AdvantageEstimator.GRPO:
@@ -646,11 +647,7 @@ class RayDAPOTrainer(RayPPOTrainer):
                     if self.use_critic:
                         with marked_timer("values", timing_raw, "cyan"):
                             values = self.critic_wg.compute_values(batch)
-                            print("using critic", flush=True)
-                            print(values, flush=True)
-                            print(batch, flush=True)
                             batch = batch.union(values)
-                            print(batch, flush=True)
 
                     # Compute rollout correction weights and off-policy metrics (inherited from RayPPOTrainer)
                     from verl.trainer.ppo.rollout_corr_helper import compute_rollout_correction_and_add_to_batch

@@ -312,7 +312,7 @@ def compute_gae_cat_advantage_return(
         returns = advantages + values
         advantages = verl_F.masked_whiten(advantages, response_mask)
 
-    return advantages, returns
+    return values, advantages, returns
 
 
 # NOTE(sgm): this implementation only consider outcome supervision, where the reward is a scalar.
