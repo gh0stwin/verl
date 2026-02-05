@@ -112,6 +112,7 @@ class DataParallelPPOCritic(BasePPOCritic):
                     values = output[2]
                 else:
                     values = output.logits
+                values = values[:, -response_length - 1 : -1]
             return values
 
     def _optimizer_step(self):
