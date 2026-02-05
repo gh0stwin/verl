@@ -113,7 +113,7 @@ def compute_advantage(
         assert config is not None
         values, advantages, returns = compute_gae_cat_advantage_return(
             token_level_rewards=data.batch["token_level_rewards"],
-            value_logits=data.batch["values"],
+            value_logits=data.batch["value_logits"],
             response_mask=data.batch["response_mask"],
             gamma=gamma,
             lam=lam,
