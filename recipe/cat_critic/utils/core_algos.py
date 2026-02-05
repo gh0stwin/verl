@@ -1696,9 +1696,6 @@ def compute_two_hot_encoding_value_loss(
     target += torch.nn.functional.one_hot(above, num_classes=len(buckets)) * weight_above[..., None]
     log_pred = value_logits - torch.logsumexp(value_logits, -1, keepdim=True)
     target = target.squeeze(-2)
-    # target = target.unsqueeze(-1)
-    print("two-hot enconding")
-    print(value_logits.shape, log_pred.shape, target.shape)
     loss = (target * log_pred).sum(-1) * response_mask
     loss = agg_loss(loss_mat=loss, loss_mask=response_mask, loss_agg_mode=loss_agg_mode)
     return loss
