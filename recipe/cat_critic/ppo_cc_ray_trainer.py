@@ -156,7 +156,7 @@ def compute_advantage(
     return data
 
 
-class RayDAPOTrainer(RayPPOTrainer):
+class RayPPOCCTrainer(RayPPOTrainer):
     """
     Note that this trainer runs on the driver process on a single CPU/GPU node.
     """

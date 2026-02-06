@@ -3,7 +3,7 @@ set -xeuo pipefail
 
 SEED=$((((RANDOM << 30) | (RANDOM << 15) | RANDOM) & 0x7fffffff))
 project_name='verl'
-exp_name="CC-DeepSeek-R1-1.5B-${SEED}"
+exp_name="PPOCC-DeepSeek-R1-1.5B-${SEED}"
 
 adv_estimator=gae_cat
 
@@ -21,12 +21,13 @@ overlong_penalty_factor=1.0
 
 loss_agg_mode="token-mean"
 
-enable_filter_groups=True
+enable_filter_groups=False
 filter_groups_metric=acc
 max_num_gen_batches=10
-train_prompt_bsz=64
 gen_prompt_bsz=$((train_prompt_bsz * 2))
 n_resp_per_prompt=4
+train_prompt_bsz=$((64 * n_resp_per_prompt))
+n_resp_per_prompt=1
 train_prompt_mini_bsz=64
 
 # Ray
@@ -40,7 +41,7 @@ NNODES=${NNODES:-1}
 STORAGE_HOME=${STORAGE_HOME:-"${HOME}/storage"}
 MODEL_PATH=${MODEL_PATH:-"${STORAGE_HOME}/models/DeepSeek-R1-Distill-Qwen-1.5B"}
 CKPTS_DIR=${CKPTS_DIR:-"${WORKING_DIR}/ckpts/${project_name}/${exp_name}"}
-TRAIN_FILE=${TRAIN_FILE:-"${STORAGE_HOME}/data/deepscaler/deepscaler-train-subset.parquet"}
+TRAIN_FILE=${TRAIN_FILE:-"${STORAGE_HOME}/data/deepscaler/deepscaler-train.parquet"}
 TEST_FILE=${TEST_FILE:-"${STORAGE_HOME}/data/deepscaler/aime-2024.parquet"}
 
 # Algorithm
@@ -65,7 +66,7 @@ export GLOO_SOCKET_IFNAME=enp1s0f0np0
 export NCCL_SOCKET_IFNAME=enp1s0f0np0
 export TP_SOCKET_IFNAME=enp1s0f0np0
 
-HYDRA_FULL_ERROR=1 python3 -m recipe.cat_critic.main_dapo \
+HYDRA_FULL_ERROR=1 python3 -m recipe.cat_critic.main_ppo_cc \
   data.train_files="${TRAIN_FILE}" \
   data.val_files="${TEST_FILE}" \
   data.prompt_key=prompt \
@@ -128,7 +129,7 @@ HYDRA_FULL_ERROR=1 python3 -m recipe.cat_critic.main_dapo \
   actor_rollout_ref.rollout.val_kwargs.top_p=${val_top_p} \
   actor_rollout_ref.rollout.val_kwargs.top_k=${top_k} \
   actor_rollout_ref.rollout.val_kwargs.do_sample=True \
-  actor_rollout_ref.rollout.val_kwargs.n=4 \
+  actor_rollout_ref.rollout.val_kwargs.n=16 \
   actor_rollout_ref.rollout.name=vllm \
   +actor_rollout_ref.rollout.engine_kwargs.vllm.max_model_len=$((max_prompt_length + max_response_length)) \
   +actor_rollout_ref.rollout.engine_kwargs.vllm.seed=${SEED} \
@@ -145,7 +146,7 @@ HYDRA_FULL_ERROR=1 python3 -m recipe.cat_critic.main_dapo \
   trainer.n_gpus_per_node=1 \
   trainer.nnodes="${NNODES}" \
   trainer.val_before_train=True \
-  trainer.test_freq=5 \
+  trainer.test_freq=10 \
   trainer.save_freq=10 \
   trainer.total_epochs=10 \
   trainer.total_training_steps=200 \

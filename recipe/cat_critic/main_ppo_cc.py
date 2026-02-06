@@ -26,7 +26,7 @@ from verl.trainer.constants_ppo import get_ppo_ray_runtime_env
 from verl.trainer.ppo.reward import load_reward_manager
 from verl.utils.device import auto_set_device, is_cuda_available
 
-from .dapo_ray_trainer import RayDAPOTrainer
+from .ppo_cc_ray_trainer import RayPPOCCTrainer
 
 
 @hydra.main(config_path="config", config_name="dapo_trainer", version_base=None)
