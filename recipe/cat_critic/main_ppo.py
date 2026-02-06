@@ -167,7 +167,7 @@ class TaskRunner:
         )
         resource_pool_manager = ResourcePoolManager(resource_pool_spec=resource_pool_spec, mapping=mapping)
 
-        trainer = RayDAPOTrainer(
+        trainer = RayPPOTrainer(
             config=config,
             tokenizer=tokenizer,
             processor=processor,
