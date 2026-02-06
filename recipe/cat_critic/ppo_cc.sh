@@ -24,9 +24,9 @@ loss_agg_mode="token-mean"
 enable_filter_groups=False
 filter_groups_metric=acc
 max_num_gen_batches=10
-gen_prompt_bsz=$((train_prompt_bsz * 2))
 n_resp_per_prompt=4
 train_prompt_bsz=$((64 * n_resp_per_prompt))
+gen_prompt_bsz=$((train_prompt_bsz * 2))
 n_resp_per_prompt=1
 train_prompt_mini_bsz=64
 
