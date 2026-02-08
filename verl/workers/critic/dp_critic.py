@@ -185,6 +185,7 @@ class DataParallelPPOCritic(BasePPOCritic):
         if "response_mask" in data.batch:
             response_mask = data.batch["response_mask"]
             response_mask = response_mask.to(values.device)
+            print(values.shape, response_mask.shape)
             values = values * response_mask.unsqueeze(-1)  # Only action tokens have values
         return values
 
