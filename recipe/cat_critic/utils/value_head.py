@@ -11,6 +11,6 @@ def load_categorical_valuehead_model(local_path, torch_dtype, model_config, trus
     )
 
     # assert model.score.out_features > 128
-    # model.score.weight.data.zero_()
-    # model.score.bias.data.zero_()
+    model.score.weight.data.zero_()
+    model.score.bias.data.zero_()
     return model

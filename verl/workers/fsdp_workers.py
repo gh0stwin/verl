@@ -1330,6 +1330,7 @@ class CriticWorker(Worker, DistProfilerExtension):
             critic_model_config.classifier_dropout = 0.0
             critic_model_config.hidden_dropout = "0"
             critic_model_config.summary_dropout_prob = 0.0
+            critic_model_config.num_labels = 1
 
             critic_module = load_valuehead_model(
                 local_path,

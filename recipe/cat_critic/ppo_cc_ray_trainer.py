@@ -646,7 +646,7 @@ class RayPPOCCTrainer(RayPPOTrainer):
                     # compute values
                     if self.use_critic:
                         with marked_timer("values", timing_raw, "cyan"):
-                            values = self.critic_wg.compute_values(batch)
+                            values = self.critic_wg.compute_values(batch)  # NOTE: I could call here an EMA of the VF
                             batch = batch.union(values)
 
                     # Compute rollout correction weights and off-policy metrics (inherited from RayPPOTrainer)
