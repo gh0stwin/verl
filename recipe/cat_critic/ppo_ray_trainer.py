@@ -35,7 +35,7 @@ from verl.single_controller.ray.base import RayWorkerGroup, create_colocated_wor
 from verl.trainer.ppo.core_algos import AdvantageEstimator, agg_loss
 from verl.trainer.ppo.metric_utils import compute_data_metrics, compute_throughout_metrics, compute_timing_metrics
 from verl.trainer.ppo.ray_trainer import RayPPOTrainer as RayPPOBaseTrainer
-from verl.trainer.ppo.ray_trainer import ResourcePoolManager, apply_kl_penalty, compute_response_mask
+from verl.trainer.ppo.ray_trainer import ResourcePoolManager, apply_kl_penalty, compute_advantage, compute_response_mask
 from verl.trainer.ppo.reward import compute_reward
 from verl.trainer.ppo.utils import Role, WorkerType, need_critic
 from verl.utils.config import omega_conf_to_dataclass
