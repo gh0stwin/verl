@@ -29,3 +29,4 @@ algorithm:
 
 trainer:
   project_name: verl-dapo
+  target_upt_interval: 15
