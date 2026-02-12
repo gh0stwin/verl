@@ -10,6 +10,6 @@ def load_categorical_valuehead_model(local_path, torch_dtype, model_config, trus
         trust_remote_code=trust_remote_code,
     )
 
-    model.score.weight.data.zero_()
-    model.score.bias.data.zero_()
+    # model.score.weight.data.zero_()
+    # model.score.bias.data.zero_()
     return model
