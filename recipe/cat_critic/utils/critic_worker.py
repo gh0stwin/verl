@@ -1,6 +1,7 @@
 import datetime
 import os
 import warnings
+from copy import deepcopy
 
 import torch
 import torch.distributed
@@ -817,12 +818,14 @@ class TargetCriticWorker(Worker, DistProfilerExtension):
 
         self.critic = DataParallelTargetPPOCritic(config=self.config, critic_module=self.critic_module)
         self.flops_counter = FlopsCounter(self.critic_model_config)
+        ckpt_config = deepcopy(self.config.checkpoint)
+        ckpt_config.load_contents = ["model"]
         self.checkpoint_manager = FSDPCheckpointManager(
             model=self.critic_module,
             optimizer=None,
             lr_scheduler=None,
             processing_class=self.processor if self.processor is not None else self.tokenizer,
-            checkpoint_config=self.config.checkpoint | dict(load_contents=["model"]),
+            checkpoint_config=ckpt_config,
         )
 
     @register(dispatch_mode=make_nd_compute_dataproto_dispatch_fn(mesh_name="critic"))
