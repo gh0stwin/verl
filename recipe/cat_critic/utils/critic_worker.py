@@ -822,7 +822,7 @@ class TargetCriticWorker(Worker, DistProfilerExtension):
             optimizer=None,
             lr_scheduler=None,
             processing_class=self.processor if self.processor is not None else self.tokenizer,
-            checkpoint_config=self.config.checkpoint,
+            checkpoint_config=self.config.checkpoint | dict(load_contents=["model"]),
         )
 
     @register(dispatch_mode=make_nd_compute_dataproto_dispatch_fn(mesh_name="critic"))
