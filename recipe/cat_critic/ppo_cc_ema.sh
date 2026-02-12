@@ -150,6 +150,6 @@ HYDRA_FULL_ERROR=1 python3 -m recipe.cat_critic.main_ppo_cc_ema \
   trainer.save_freq=40 \
   trainer.total_epochs=10 \
   trainer.total_training_steps=200 \
-  trainer.target_upt_interval=15 \
+  trainer.target_upt_interval=1 \
   trainer.default_local_dir="${CKPTS_DIR}" \
   trainer.resume_mode=auto
