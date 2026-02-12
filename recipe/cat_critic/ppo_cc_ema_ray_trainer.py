@@ -280,7 +280,7 @@ class RayPPOCCEMATrainer(RayPPOTrainer):
 
             critic_cls = RayClassWithInitArgs(cls=self.role_worker_mapping[Role.Critic], config=critic_cfg)
             target_critic_cls = RayClassWithInitArgs(
-                cls=self.role_worker_mapping[Role.TaregtCritic], config=deepcopy(critic_cfg)
+                cls=self.role_worker_mapping[Role.TargetCritic], config=deepcopy(critic_cfg)
             )
 
             self.resource_pool_to_cls[resource_pool][str(Role.Critic)] = critic_cls
