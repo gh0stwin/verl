@@ -17,6 +17,7 @@ This trainer supports model-agonistic model initialization with huggingface
 """
 
 import os
+import shutil
 import uuid
 from collections import defaultdict
 from copy import deepcopy
@@ -730,11 +731,15 @@ class RayPPOCCEMATrainer(RayPPOTrainer):
                         actor_output_metrics = reduce_metrics(actor_output.meta_info["metrics"])
                         metrics.update(actor_output_metrics)
 
+                    # Copy new weights to target critic
                     if self.global_steps % self.config.trainer.target_upt_interval == 0 and not is_last_step:
                         path = os.path.join(self.config.trainer.default_local_dir, "tmp", "critic")
                         self.critic_wg.save_checkpoint(path, None, self.global_steps, max_ckpt_to_keep=1)
                         self.target_critic_wg.load_checkpoint(path, None, del_local_after_load=True)
                         print(f"Updating target critic at step {self.global_steps}")
+
+                        if os.path.exists(path):
+                            shutil.rmtree(path)
 
                     # Log rollout generations if enabled
                     rollout_data_dir = self.config.trainer.get("rollout_data_dir", None)
