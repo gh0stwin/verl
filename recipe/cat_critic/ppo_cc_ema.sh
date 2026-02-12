@@ -66,7 +66,7 @@ export GLOO_SOCKET_IFNAME=bond0
 export NCCL_SOCKET_IFNAME=bond0
 export TP_SOCKET_IFNAME=bond0
 
-HYDRA_FULL_ERROR=1 python3 -m recipe.cat_critic.main_ppo_cc \
+HYDRA_FULL_ERROR=1 python3 -m recipe.cat_critic.main_ppo_cc_ema \
   data.train_files="${TRAIN_FILE}" \
   data.val_files="${TEST_FILE}" \
   data.prompt_key=prompt \
