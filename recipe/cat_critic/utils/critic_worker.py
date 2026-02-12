@@ -1,7 +1,6 @@
 import datetime
 import os
 import warnings
-from copy import deepcopy
 
 import torch
 import torch.distributed
@@ -9,6 +8,8 @@ from codetiming import Timer
 from omegaconf import OmegaConf
 from peft import LoraConfig, TaskType, get_peft_model
 from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
+
+from verl.trainer.config.config import CheckpointConfig
 
 try:
     # for torch 2.5+
@@ -818,8 +819,7 @@ class TargetCriticWorker(Worker, DistProfilerExtension):
 
         self.critic = DataParallelTargetPPOCritic(config=self.config, critic_module=self.critic_module)
         self.flops_counter = FlopsCounter(self.critic_model_config)
-        ckpt_config = deepcopy(self.config.checkpoint)
-        ckpt_config.load_contents = ["model"]
+        ckpt_config = CheckpointConfig(save_contents=["model"], load_contents=["model"])
         self.checkpoint_manager = FSDPCheckpointManager(
             model=self.critic_module,
             optimizer=None,
