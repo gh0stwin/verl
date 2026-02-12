@@ -807,7 +807,7 @@ class TargetCriticWorker(Worker, DistProfilerExtension):
         # This is used to import external_lib into the huggingface systems
         import_external_libs(self.config.model.get("external_lib", None))
 
-        from .utils.dp_critic import DataParallelTargetPPOCritic
+        from .dp_critic import DataParallelTargetPPOCritic
 
         self.critic_module, _, _ = self._build_critic_model_optimizer(self.config)
 
@@ -815,7 +815,7 @@ class TargetCriticWorker(Worker, DistProfilerExtension):
             offload_fsdp_model_to_cpu(self.critic_module)
             log_gpu_memory_usage("After offload critic model during init", logger=logger)
 
-        self.critic = DataParallelPPOCritic(config=self.config, critic_module=self.critic_module, critic_optimizer=None)
+        self.critic = DataParallelTargetPPOCritic(config=self.config, critic_module=self.critic_module)
         self.flops_counter = FlopsCounter(self.critic_model_config)
         self.checkpoint_manager = FSDPCheckpointManager(
             model=self.critic_module,

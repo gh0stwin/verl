@@ -252,7 +252,6 @@ class DataParallelTargetPPOCritic(BasePPOCritic):
         self.critic_module = critic_module
         self.use_remove_padding = self.config.model.get("use_remove_padding", False)
         print(f"Critic use_remove_padding={self.use_remove_padding}")
-
         self.ulysses_sequence_parallel_size = self.config.get("ulysses_sequence_parallel_size", 1)
         self.device_name = get_device_name()
 
