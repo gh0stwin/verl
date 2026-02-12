@@ -42,6 +42,7 @@ from verl.trainer.ppo.ray_trainer import (
     compute_response_mask,
 )
 from verl.trainer.ppo.reward import compute_reward
+from verl.trainer.ppo.utils import WorkerType
 from verl.utils.config import omega_conf_to_dataclass
 from verl.utils.import_utils import load_class_from_fqn
 from verl.utils.metric import reduce_metrics
@@ -49,7 +50,6 @@ from verl.utils.profiler import marked_timer
 from verl.utils.rollout_skip import RolloutSkip
 from verl.workers.config import FSDPEngineConfig
 
-from .utils import Role, WorkerType
 from .utils.core_algos import (
     AdvantageEstimator,
     compute_gae_advantage_return,
@@ -58,7 +58,7 @@ from .utils.core_algos import (
     compute_pf_ppo_reweight_data,
     get_adv_estimator_fn,
 )
-from .utils.utils import need_critic
+from .utils.utils import Role, need_critic
 
 
 def compute_advantage(
