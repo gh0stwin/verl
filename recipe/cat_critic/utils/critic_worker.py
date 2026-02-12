@@ -840,7 +840,7 @@ class TargetCriticWorker(Worker, DistProfilerExtension):
         with self.ulysses_sharding_manager:
             data = data.to("cpu")  # data will to device with each micro batch on critic.compute_values
             values = self.critic.compute_values(data=data)
-            output = DataProto.from_dict(tensors={"values": values})
+            output = DataProto.from_dict(tensors={"value_logits": values})
 
         output = output.to("cpu")
 
