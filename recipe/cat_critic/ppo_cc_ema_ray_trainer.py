@@ -42,12 +42,13 @@ from verl.trainer.ppo.ray_trainer import (
     compute_response_mask,
 )
 from verl.trainer.ppo.reward import compute_reward
-from verl.trainer.ppo.utils import WorkerType
+from verl.trainer.ppo.utils import WorkerType, need_reference_policy, need_reward_model
 from verl.utils.config import omega_conf_to_dataclass
 from verl.utils.import_utils import load_class_from_fqn
 from verl.utils.metric import reduce_metrics
 from verl.utils.profiler import marked_timer
 from verl.utils.rollout_skip import RolloutSkip
+from verl.utils.tracking import ValidationGenerationsLogger
 from verl.workers.config import FSDPEngineConfig
 
 from .utils.core_algos import (
@@ -57,6 +58,7 @@ from .utils.core_algos import (
     compute_grpo_outcome_advantage,
     compute_pf_ppo_reweight_data,
     get_adv_estimator_fn,
+    get_kl_controller,
 )
 from .utils.utils import Role, need_critic
 
@@ -177,23 +179,49 @@ class RayPPOCCEMATrainer(RayPPOTrainer):
         train_sampler: Optional[Sampler] = None,
         device_name=None,
     ):
-        super().__init__(
-            config,
-            tokenizer,
-            role_worker_mapping,
-            resource_pool_manager,
-            ray_worker_group_cls,
-            processor,
-            reward_fn,
-            val_reward_fn,
-            train_dataset,
-            val_dataset,
-            collate_fn,
-            train_sampler,
-            device_name,
-        )
+        # Store the tokenizer for text processing
+        self.tokenizer = tokenizer
+        self.processor = processor
+        self.config = config
+        self.reward_fn = reward_fn
+        self.val_reward_fn = val_reward_fn
+
+        self.hybrid_engine = config.actor_rollout_ref.hybrid_engine
+        assert self.hybrid_engine, "Currently, only support hybrid engine"
+
+        if self.hybrid_engine:
+            assert Role.ActorRollout in role_worker_mapping or Role.ActorRolloutRef in role_worker_mapping, (
+                f"{role_worker_mapping.keys()=}"
+            )
+
+        self.role_worker_mapping = role_worker_mapping
+        self.resource_pool_manager = resource_pool_manager
+        self.use_reference_policy = need_reference_policy(self.role_worker_mapping)
+        # legacy reward model implementation
+        self.use_rm = need_reward_model(self.role_worker_mapping)
+        self.use_reward_loop = self.config.reward_model.use_reward_loop
 
         self.use_critic = need_critic(self.config)
+        self.ray_worker_group_cls = ray_worker_group_cls
+        self.device_name = device_name if device_name else self.config.trainer.device
+        self.validation_generations_logger = ValidationGenerationsLogger(
+            project_name=self.config.trainer.project_name,
+            experiment_name=self.config.trainer.experiment_name,
+        )
+
+        # if ref_in_actor is True, the reference policy will be actor without lora applied
+        self.ref_in_actor = (
+            config.actor_rollout_ref.model.get("lora_rank", 0) > 0
+            or config.actor_rollout_ref.model.get("lora_adapter_path") is not None
+        )
+
+        # define in-reward KL control
+        # kl loss control currently not suppoorted
+        if self.config.algorithm.use_kl_in_reward:
+            self.kl_ctrl_in_reward = get_kl_controller(self.config.algorithm.kl_ctrl)
+
+        self.use_legacy_worker_impl = config.trainer.get("use_legacy_worker_impl", "auto")
+        self._create_dataloader(train_dataset, val_dataset, collate_fn, train_sampler)
 
     def init_workers(self):
         """Initialize distributed training workers using Ray backend.
