@@ -62,9 +62,9 @@ gen_tp=1
 
 export VLLM_USE_V1=1
 export VLLM_WORKER_MULTIPROC_METHOD="spawn"
-export GLOO_SOCKET_IFNAME=enp1s0f0np0
-export NCCL_SOCKET_IFNAME=enp1s0f0np0
-export TP_SOCKET_IFNAME=enp1s0f0np0
+export GLOO_SOCKET_IFNAME=bond0
+export NCCL_SOCKET_IFNAME=bond0
+export TP_SOCKET_IFNAME=bond0
 
 HYDRA_FULL_ERROR=1 python3 -m recipe.cat_critic.main_ppo \
   data.train_files="${TRAIN_FILE}" \
