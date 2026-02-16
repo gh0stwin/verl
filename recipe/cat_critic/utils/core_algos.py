@@ -286,12 +286,15 @@ def compute_gae_cat_advantage_return(
         assert value_logits.shape[-1] == config.n_bins
         min_return = config.min_return  # defined in the linear scale
         max_return = config.max_return  # defined in the linear scale
-        min_bucket = symlog(torch.tensor(min_return), -1.0, 2.0)
-        max_bucket = symlog(torch.tensor(max_return), -1.0, 2.0)
+        min_bucket = 0.0
+        max_bucket = 1.0
+        # min_bucket = symlog(torch.tensor(min_return), -1.0, 2.0)
+        # max_bucket = symlog(torch.tensor(max_return), -1.0, 2.0)
         buckets = torch.linspace(min_bucket, max_bucket, config.n_bins, device=value_logits.device)
         # probs = torch.linspace(0, 1, value_logits.shape[-1])
         values = torch.softmax(value_logits, -1) * buckets
-        values = symexp(torch.sum(values, dim=-1), 0.5, 0.5)
+        # values = symexp(torch.sum(values, dim=-1), 0.5, 0.5)
+        values = torch.sum(values, dim=-1)
 
         nextvalues = 0
         lastgaelam = 0
@@ -1675,9 +1678,11 @@ def compute_two_hot_encoding_value_loss(
     assert value_logits.ndim == 3
     min_return = 0.0  # defined in the linear scale
     max_return = 1.0  # defined in the linear scale
-    min_bucket = symlog(torch.tensor(min_return), -1.0, 2.0)
-    max_bucket = symlog(torch.tensor(max_return), -1.0, 2.0)
-    returns = symlog(returns, -1.0, 2.0)
+    # min_bucket = symlog(torch.tensor(min_return), -1.0, 2.0)
+    min_bucket = 0.0
+    max_bucket = 1.0
+    # max_bucket = symlog(torch.tensor(max_return), -1.0, 2.0)
+    # returns = symlog(returns, -1.0, 2.0)
     buckets = torch.linspace(min_bucket, max_bucket, value_logits.shape[-1], device=value_logits.device)
 
     below = torch.sum((buckets <= returns[..., None]).to(torch.int32), dim=-1) - 1  # number of buckets below
