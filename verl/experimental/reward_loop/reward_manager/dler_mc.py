@@ -1,5 +1,6 @@
 import inspect
 
+import numpy as np
 import torch
 
 from verl import DataProto
@@ -87,19 +88,54 @@ class DLERMonteCarloRewardManager(RewardManagerBase):
 
             scores.append(score)
 
+        scores = np.array(scores)
+        assert scores.ndim == 1
+        scores = np.reshape(scores, (-1, self.config.actor_rollout_ref.rollout.mc_samples))
+        scores = np.mean(scores, axis=1)
+        scores = np.repeat(scores, self.config.actor_rollout_ref.mc_token_interval)[:valid_response_length]
+
+        response_str = await self.loop.run_in_executor(
+            None, lambda: self.tokenizer.decode(valid_response_ids, skip_special_tokens=True)
+        )
+
+        extra_reward_kwargs = (
+            {"reward_router_address": self.reward_router_address, "reward_model_tokenizer": self.reward_model_tokenizer}
+            if self.reward_router_address is not None
+            else {}
+        )
+
+        if self.is_async_reward_score:
+            result = await self.compute_score(
+                data_source=data_source,
+                solution_str=response_str,
+                ground_truth=ground_truth,
+                extra_info=extra_info,
+                **extra_reward_kwargs,
+            )
+        else:
+            result = await self.loop.run_in_executor(
+                None,
+                lambda: self.compute_score(
+                    data_source=data_source,
+                    solution_str=response_str,
+                    ground_truth=ground_truth,
+                    extra_info=extra_info,
+                    **extra_reward_kwargs,
+                ),
+            )
+
         reward_extra_info = {}
-        score: float
 
         if isinstance(result, dict):
-            score = result["score"]
-
             for key, value in result.items():
                 reward_extra_info[key] = value
         else:
-            score = result
-            reward_extra_info["acc"] = score
+            reward_extra_info["acc"] = result
 
-        reward = score
+        reward = scores
+        assert reward.shape[0] <= response_length
+        reward = np.concat((reward, np.zeros((response_length - valid_response_length,))))
+        reward = torch.tensor(reward, dtype=torch.float32, device=response_ids.device)
 
         if self.overlong_buffer_cfg is not None and self.overlong_buffer_cfg.enable:
             stop_penalty_coef = self.overlong_buffer_cfg.penalty_factor

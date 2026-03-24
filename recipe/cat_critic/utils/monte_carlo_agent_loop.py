@@ -19,8 +19,8 @@ class SingleTurnMonteCarloAgentLoop(AgentLoopBase):
         super().__init__(*args, **kwargs)
         self.prompt_length = self.config.actor_rollout_ref.rollout.prompt_length
         self.response_length = self.config.actor_rollout_ref.rollout.response_length
-        self.mc_token_interval = self.config.actor_rollout_ref.rollout.mc_token_interval
-        self.mc_samples = self.config.actor_rollout_ref.rollout.mc_samples
+        self.mc_token_interval = self.config.reward_model.mc_token_interval
+        self.mc_samples = self.config.reward_model.mc_samples
 
     async def run(self, sampling_params: dict[str, Any], **kwargs) -> AgentLoopOutput:
         messages = list(kwargs["raw_prompt"])
