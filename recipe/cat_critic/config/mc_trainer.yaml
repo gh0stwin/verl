@@ -28,6 +28,7 @@ algorithm:
   min_return: 0.0
   max_return: 1.0
   n_bins: 1023
+  adv_norm: true
 
 trainer:
   project_name: verl-dapo

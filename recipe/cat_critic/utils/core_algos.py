@@ -84,6 +84,7 @@ class AdvantageEstimator(str, Enum):
 
     GAE = "gae"
     GAE_CAT = "gae_cat"
+    MC_ADV = "mc_adv"
     GRPO = "grpo"
     REINFORCE_PLUS_PLUS = "reinforce_plus_plus"
     REINFORCE_PLUS_PLUS_BASELINE = "reinforce_plus_plus_baseline"
@@ -316,6 +317,38 @@ def compute_gae_cat_advantage_return(
         advantages = verl_F.masked_whiten(advantages, response_mask)
 
     return values, advantages, returns
+
+
+@register_adv_est(AdvantageEstimator.MC_ADV)  # or simply: @register_adv_est("gae")
+def compute_mc_adv_advantage_return(token_level_adv: torch.Tensor, response_mask: torch.Tensor, norm: bool = True):
+    """Adapted from https://github.com/huggingface/trl/blob/main/trl/trainer/ppo_trainer.py
+
+    Args:
+        token_level_adv: `(torch.Tensor)`
+            shape is (bs, response_length)
+        values: `(torch.Tensor)`
+            shape is (bs, response_length)
+        response_mask: `(torch.Tensor)`
+            shape is (bs, response_length). [EOS] mask. The token after [EOS] have mask zero.
+        gamma is `(float)`
+            discounted factor used in RL
+        lam: `(float)`
+            lambda value when computing Generalized Advantage Estimation (https://arxiv.org/abs/1506.02438)
+
+    Returns:
+        advantages: `(torch.Tensor)`
+            shape: (bs, response_length)
+        Returns: `(torch.Tensor)`
+            shape: (bs, response_length)
+
+    """
+    if not norm:
+        return token_level_adv, token_level_adv
+
+    with torch.no_grad():
+        token_level_adv = verl_F.masked_whiten(token_level_adv, response_mask)
+
+    return token_level_adv, token_level_adv
 
 
 # NOTE(sgm): this implementation only consider outcome supervision, where the reward is a scalar.
