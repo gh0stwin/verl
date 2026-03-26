@@ -62,13 +62,13 @@ sbatch <<EOF
 #SBATCH --mem=${USER_MEM}G                   # total memory per node (4 GB per cpu-core is default)
 #SBATCH --gres=gpu:RTX_PRO_6000_96GB:$USER_GPU               # number of gpus per node
 #SBATCH --export=ALL                    # export all environment variables
-#SBATCH --time=48:00:00                 # total run time limit (HH:MM:SS)
+#SBATCH --time=5-:00:00                 # total run time limit (HH:MM:SS)
 #SBATCH --mail-type=begin               # send mail when job begins
 #SBATCH --mail-type=end                 # send mail when job ends
 #SBATCH --mail-type=fail                # send mail if job fails
 #SBATCH --mail-user=fabiovital@tecnico.ulisboa.pt
 #SBATCH --account=inesc
-#SBATCH --partition=gaips_phd
+#SBATCH --partition=gaips_gpu_high
 #SBATCH --nodelist=a01
 #IGNORE#SBATCH --dependency=after:16261
 
@@ -102,24 +102,21 @@ if [ ! -d "\$TMP_DIR ]: then
   miniconda3/bin/conda init bash
   sed -i "8i\export CONDA_PREFIX=\${TMP_DIR}/miniconda3" \$HOME/.bashrc
   source .bashrc
+  cp -r /cfs/home/u021032/dev/storage .
   rsync -av --progress --exclude={'.git','slurm-*.out','.venv','docs','notebooks','examples','docker','tests'} /cfs/home/u021032/dev/verl \$HOME
   conda update -n base -c defaults conda -y
   cd verl
-  ./INSTALL.sh
+  ./install.sh
   export USER_CONDA_ENV=verl
   conda activate \$USER_CONDA_ENV
-  uv venv .venv --python 3.13 --seed
   source .venv/bin/activate
-  uv sync
 fi
 
 # Move $HOME to the job's folder created by slurm
 cd \$TMP_DIR
 source .bashrc
 
-# Copy git repo (already in cfs) and install conda env from $(environment.yml)
-cd \$HOME/verl
-git pull
+cd ./verl
 
 # Activate env
 export USER_CONDA_ENV=verl  # conda env name

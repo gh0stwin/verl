@@ -3,7 +3,7 @@ set -xeuo pipefail
 
 SEED=$((((RANDOM << 30) | (RANDOM << 15) | RANDOM) & 0x7fffffff))
 project_name='verl'
-exp_name="PPO-DeepSeek-R1-1.5B-${SEED}"
+exp_name="PPO-MC-DeepSeek-R1-1.5B-${SEED}"
 
 adv_estimator=gae
 
@@ -30,7 +30,7 @@ gen_prompt_bsz=$((train_prompt_bsz * 2))
 n_resp_per_prompt=1
 train_prompt_mini_bsz=64
 mc_samples=4
-mc_token_interval=64
+mc_token_interval=256
 
 # Ray
 PORT=$(($RANDOM % 2000 + 12000))
