@@ -170,11 +170,19 @@ class DLERMCRewardManager(AbstractRewardManager):
             print("WHAT ARE MC SAMPLES?")
             print(data_item.non_tensor_batch["mc_samples"])
             reward, adv = self._compute_mc_returns(
-                data_item.non_tensor_batch["mc_samples"], data_source, ground_truth, extra_info, valid_response_length
+                score,
+                data_item.non_tensor_batch["mc_samples"],
+                data_source,
+                ground_truth,
+                extra_info,
+                valid_response_length,
             )
 
-            reward_tensor[i, :valid_response_length] = reward
-            adv_tensor[i, :valid_response_length] = adv
+            reward_tensor[i, :valid_response_length] = torch.tensor(
+                reward, dtype=reward_tensor.dtype, device=reward_tensor.device
+            )
+
+            adv_tensor[i, :valid_response_length] = torch.tensor(adv, dtype=adv_tensor.dtype, device=adv_tensor.device)
 
             if data_source not in already_print_data_sources:
                 already_print_data_sources[data_source] = 0
