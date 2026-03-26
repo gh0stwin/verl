@@ -15,6 +15,7 @@
 from collections import defaultdict
 
 import numpy as np
+from scipy.interpolate import interp1d
 import torch
 
 from verl import DataProto
@@ -69,7 +70,7 @@ class DLERMCRewardManager(AbstractRewardManager):
         reward_tensor = reward_tensor * stop_properly_scale  # apply the scale to the reward_tensor
         return reward_tensor
 
-    def _compute_mc_returns(self, mc_samples, data_source, ground_truth, extra_info, resp_len):
+    def _compute_mc_returns(self, final_score, mc_samples, data_source, ground_truth, extra_info, resp_len):
         eos_token = self.tokenizer.eos_token
         scores = []
 
@@ -94,10 +95,24 @@ class DLERMCRewardManager(AbstractRewardManager):
         assert scores.ndim == 1
         scores = np.reshape(scores, (-1, self.mc_samples))
         scores = np.mean(scores, axis=1)
+        scores = np.concat((scores, [final_score]))
+
+        adv = np.copy(scores)
+        adv[:-1] = scores[1:] - scores[:-1]
+        adv_idx = np.arange(scores.shape[0] - 1) * self.mc_token_interval
+        adv_idx = np.concat((adv_idx, [resp_len - 1]))
+        adv_interp_fn = interp1d(adv_idx, adv, kind="previous")
+        response_idx = np.arange(resp_len)
+        per_token_adv = adv_interp_fn(response_idx)
+
+        # TODO: ADV - other approaches:
+        #   - linear interpolation between computed adv points
+        #   - `scores` average takes into account all future rewards (from that timestep onwards)
+
         scores = np.repeat(scores, self.mc_token_interval)
         scores = np.pad(scores, (0, resp_len - scores.shape[0]), mode="constant", constant_values=scores[-1])
-        assert scores.shape[0] == resp_len
-        return scores
+        assert scores.shape[0] == per_token_adv.shape[0] == resp_len
+        return scores, per_token_adv
 
     def __call__(self, data: DataProto, return_dict: bool = False):
         """We will expand this function gradually based on the available datasets"""
@@ -110,6 +125,7 @@ class DLERMCRewardManager(AbstractRewardManager):
 
         print("DLER (MC) - computing rewards")
         reward_tensor = torch.zeros_like(data.batch["responses"], dtype=torch.float32)
+        adv_tensor = torch.zeros_like(data.batch["responses"], dtype=torch.float32)
         reward_extra_info = defaultdict(list)
         already_print_data_sources = {}
 
@@ -151,13 +167,14 @@ class DLERMCRewardManager(AbstractRewardManager):
                 reward_extra_info["acc"].append(score)
 
             # reward = score
-            print("WHAT IS MC SAMPLES?")
+            print("WHAT ARE MC SAMPLES?")
             print(data_item.non_tensor_batch["mc_samples"])
-            reward = self._compute_mc_returns(
+            reward, adv = self._compute_mc_returns(
                 data_item.non_tensor_batch["mc_samples"], data_source, ground_truth, extra_info, valid_response_length
             )
 
             reward_tensor[i, :valid_response_length] = reward
+            adv_tensor[i, :valid_response_length] = adv
 
             if data_source not in already_print_data_sources:
                 already_print_data_sources[data_source] = 0
@@ -178,11 +195,13 @@ class DLERMCRewardManager(AbstractRewardManager):
 
         if self.overlong_buffer_cfg.enable:
             reward_tensor = self._apply_stop_properly_penalty(reward_tensor, data)
+            adv_tensor = self._apply_stop_properly_penalty(adv_tensor, data)
 
         if return_dict:
             return {
                 "score_tensor": score_tensor,
                 "reward_tensor": reward_tensor,
+                "adv_tensor": adv_tensor,
                 "reward_extra_info": reward_extra_info,
             }
         else:
