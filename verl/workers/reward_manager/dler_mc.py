@@ -15,8 +15,8 @@
 from collections import defaultdict
 
 import numpy as np
-from scipy.interpolate import interp1d
 import torch
+from scipy.interpolate import interp1d
 
 from verl import DataProto
 from verl.utils.reward_score import default_compute_score

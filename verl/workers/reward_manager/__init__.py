@@ -16,6 +16,7 @@ from .registry import get_reward_manager_cls, register  # noqa: I001
 from .batch import BatchRewardManager
 from .dapo import DAPORewardManager
 from .dler import DLERRewardManager
+from .dler_mc import DLERMCRewardManager
 from .naive import NaiveRewardManager
 from .prime import PrimeRewardManager
 
@@ -24,6 +25,7 @@ __all__ = [
     "BatchRewardManager",
     "DAPORewardManager",
     "DLERRewardManager",
+    "DLERMCRewardManager",
     "NaiveRewardManager",
     "PrimeRewardManager",
     "register",

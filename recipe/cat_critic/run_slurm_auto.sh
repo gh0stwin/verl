@@ -130,7 +130,7 @@ fi
 # Move $HOME to the job's folder created by slurm
 cd \$TMP_DIR
 source .bashrc
-
+rsync -av --progress --exclude={'.git','slurm-*.out','.venv','docs','notebooks','examples','docker','tests','.gemini','.github'} /cfs/home/u021032/dev/verl \$HOME
 cd ./verl
 
 # Activate env
