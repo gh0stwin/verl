@@ -60,7 +60,7 @@ sbatch <<EOF
 #SBATCH --ntasks=1                      # total number of tasks across all nodes
 #SBATCH --cpus-per-task=$USER_CPU            # cpu-cores per task (>1 if multi-threaded tasks)
 #SBATCH --mem=${USER_MEM}G                   # total memory per node (4 GB per cpu-core is default)
-#SBATCH --gres=gpu:RTX_PRO_6000_96GB:$USER_GPU               # number of gpus per node
+#SBATCH --gres=gpu:$USER_GPU               # number of gpus per node
 #SBATCH --export=ALL                    # export all environment variables
 #SBATCH --time=5-00:00:00                 # total run time limit (HH:MM:SS)
 #SBATCH --mail-type=begin               # send mail when job begins
@@ -69,8 +69,8 @@ sbatch <<EOF
 #SBATCH --mail-user=fabiovital@tecnico.ulisboa.pt
 #SBATCH --account=inesc
 #SBATCH --partition=gaips_gpu_high
-#SBATCH --nodelist=a01
-#IGNORE#SBATCH --dependency=after:16261
+#IGNORE_SBATCH --nodelist=a01
+#IGNORE_SBATCH --dependency=after:16261
 
 # set -x  # Echo commands being executed (useful for debugging)
 
