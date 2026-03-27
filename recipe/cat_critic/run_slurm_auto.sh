@@ -133,7 +133,7 @@ rsync -av --progress --exclude={'.git','slurm-*.out','.venv','docs','notebooks',
 cd ./verl
 
 set -o allexport
-source .env
+source vars/private.env
 set +o allexport
 
 # Activate env
