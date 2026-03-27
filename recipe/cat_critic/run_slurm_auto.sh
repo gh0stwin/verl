@@ -62,7 +62,7 @@ sbatch <<EOF
 #SBATCH --mem=${USER_MEM}G                   # total memory per node (4 GB per cpu-core is default)
 #SBATCH --gres=gpu:RTX_PRO_6000_96GB:$USER_GPU               # number of gpus per node
 #SBATCH --export=ALL                    # export all environment variables
-#SBATCH --time=5-:00:00                 # total run time limit (HH:MM:SS)
+#SBATCH --time=5-00:00:00                 # total run time limit (HH:MM:SS)
 #SBATCH --mail-type=begin               # send mail when job begins
 #SBATCH --mail-type=end                 # send mail when job ends
 #SBATCH --mail-type=fail                # send mail if job fails
@@ -84,7 +84,7 @@ unset CONDA_PYTHON_EXE
 unset CONDA_PREFIX
 unset CONDA_DEFAULT_ENV
 
-if [ ! -d "\$TMP_DIR ]: then
+if [ ! -d "\$TMP_DIR" ]: then
   mkdir \$TMP_DIR
   chmod 700 -R \$TMP_DIR
   cd \$TMP_DIR
