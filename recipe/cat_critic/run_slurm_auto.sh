@@ -84,8 +84,8 @@ unset CONDA_PYTHON_EXE
 unset CONDA_PREFIX
 unset CONDA_DEFAULT_ENV
 
-if [ ! -d "\$TMP_DIR" ]: then
-  mkdir \$TMP_DIR
+if [ ! -d "\$TMP_DIR" ]; then
+  mkdir -p \$TMP_DIR
   chmod 700 -R \$TMP_DIR
   cd \$TMP_DIR
   touch .bashrc
