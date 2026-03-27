@@ -142,6 +142,6 @@ conda activate \$USER_CONDA_ENV
 source .venv/bin/activate
 
 unset ROCR_VISIBLE_DEVICES
-./recipe/cat_critic/${USER_SCRIPT}.sh
+./recipe/cat_critic/${USER_SCRIPT}.sh --gpu=${USER_GPU}
 
 EOF

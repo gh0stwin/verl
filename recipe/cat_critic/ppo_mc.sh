@@ -1,6 +1,39 @@
 #!/bin/bash
 set -xeuo pipefail
 
+ARGS_LONG="gpu:"
+if ! OPTIONS=$(getopt \
+  -o "" \
+  -l $ARGS_LONG \
+  -- "$@"); then
+  exit 1
+fi
+
+eval set -- "$OPTIONS"
+
+while [ $# -gt 0 ]; do
+  case $1 in
+  --gpu)
+    USER_GPU=${2}
+    shift
+    ;;
+  --)
+    shift
+    break
+    ;;
+  -*)
+    echo "$0: error - unrecognized option $1" 1>&2
+    exit 1
+    ;;
+  *) break ;;
+  esac
+  shift
+done
+
+if [ -z "$USER_GPU" ]; then
+  USER_GPU=1
+fi
+
 SEED=$((((RANDOM << 30) | (RANDOM << 15) | RANDOM) & 0x7fffffff))
 project_name='verl'
 exp_name="PPO-MC-DeepSeek-R1-1.5B-${SEED}"
@@ -137,7 +170,7 @@ HYDRA_FULL_ERROR=1 python3 -m recipe.cat_critic.main_ppo_mc \
   trainer.logger='["console","wandb"]' \
   trainer.project_name="${project_name}" \
   trainer.experiment_name="${exp_name}" \
-  trainer.n_gpus_per_node=1 \
+  trainer.n_gpus_per_node=${USER_GPU} \
   trainer.nnodes="${NNODES}" \
   trainer.val_before_train=True \
   trainer.test_freq=10 \
