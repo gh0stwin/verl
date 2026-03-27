@@ -13,9 +13,10 @@
 # limitations under the License.
 
 from .agent_loop import AgentLoopBase, AgentLoopManager, AgentLoopWorker, AsyncLLMServerManager
+from .monte_carlo_agent_loop import MonteCarloAgentLoop
 from .single_turn_agent_loop import SingleTurnAgentLoop
 from .tool_agent_loop import ToolAgentLoop
 
-_ = [SingleTurnAgentLoop, ToolAgentLoop]
+_ = [SingleTurnAgentLoop, ToolAgentLoop, MonteCarloAgentLoop]
 
 __all__ = ["AgentLoopBase", "AgentLoopManager", "AsyncLLMServerManager", "AgentLoopWorker"]
