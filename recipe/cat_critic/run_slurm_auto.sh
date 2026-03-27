@@ -132,6 +132,10 @@ source .bashrc
 rsync -av --progress --exclude={'.git','slurm-*.out','.venv','docs','notebooks','examples','docker','tests','.gemini','.github'} /cfs/home/u021032/dev/verl \$HOME
 cd ./verl
 
+set -o allexport
+source .env
+set +o allexport
+
 # Activate env
 export USER_CONDA_ENV=verl  # conda env name
 conda activate \$USER_CONDA_ENV
